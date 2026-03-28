@@ -5,24 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wealthcons Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#fff;--bg2:#f8f7f4;--bg3:#f1efe8;--tx:#2c2c2a;--tx2:#73726c;--bd:rgba(44,44,42,.12);--bd2:rgba(44,44,42,.25);--blue:#185fa5;--blue-bg:#e6f1fb;--green:#3b6d11;--green-bg:#eaf3de;--amber:#854f0b;--amber-bg:#faeeda;--red:#a32d2d;--red-bg:#fcebeb;--teal:#0f6e56;--teal-bg:#e1f5ee;--purple:#534ab7;--purple-bg:#eeedfe;--r:8px;--r2:12px}
-@media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2c2c2a;--bg3:#383836;--tx:#e8e6dc;--tx2:#9c9a92;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.25);--blue:#85b7eb;--blue-bg:#042c53;--green:#97c459;--green-bg:#173404;--amber:#ef9f27;--amber-bg:#412402;--red:#f09595;--red-bg:#501313;--teal:#5dcaa5;--teal-bg:#04342c;--purple:#afa9ec;--purple-bg:#26215c;--bg-overlay:rgba(0,0,0,.6)}:root{--bg-overlay:rgba(0,0,0,.6)}}
+@media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2c2c2a;--bg3:#383836;--tx:#e8e6dc;--tx2:#9c9a92;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.25);--blue:#85b7eb;--blue-bg:#042c53;--green:#97c459;--green-bg:#173404;--amber:#ef9f27;--amber-bg:#412402;--red:#f09595;--red-bg:#501313;--teal:#5dcaa5;--teal-bg:#04342c;--purple:#afa9ec;--purple-bg:#26215c}}
 body{background:var(--bg);font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--tx);font-size:14px;line-height:1.5;padding:12px;max-width:1200px;margin:0 auto}
-/* Setup overlay */
-.setup-overlay{position:fixed;inset:0;background:var(--bg-overlay,rgba(0,0,0,.4));display:flex;align-items:center;justify-content:center;z-index:999}
-.setup-box{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:520px;width:92%}
-.setup-box h2{font-size:17px;margin-bottom:6px}
-.setup-box p{font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.6}
-.setup-box code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;word-break:break-all}
-.setup-box input{width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:10px 14px;font-size:14px;font-family:monospace;outline:none;margin-bottom:12px}
-.setup-box input:focus{border-color:var(--blue)}
-.setup-err{color:var(--red);font-size:12px;margin-bottom:10px;display:none}
-.setup-steps{background:var(--bg2);border-radius:var(--r);padding:14px;margin-bottom:16px;font-size:12px;line-height:1.8}
-.setup-steps b{color:var(--blue)}
-/* Common */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999}
+.dialog{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:500px;width:92%}
+.dialog h2{font-size:17px;margin-bottom:6px}
+.dialog p{font-size:13px;color:var(--tx2);margin-bottom:14px;line-height:1.6}
+.dialog code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px}
+.dialog input{width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:10px 14px;font-size:14px;font-family:monospace;outline:none;margin-bottom:10px}
+.dialog input:focus{border-color:var(--blue)}
+.dialog-err{color:var(--red);font-size:12px;margin-bottom:10px;display:none}
+.dialog-steps{background:var(--bg2);border-radius:var(--r);padding:14px;margin-bottom:14px;font-size:12px;line-height:1.8}
+.dialog-steps b{color:var(--blue)}
 .topbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .topbar-title{font-size:16px;font-weight:600;flex:1;min-width:120px}
 .sync-ind{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);background:var(--bg2);padding:4px 10px;border-radius:20px}
@@ -30,12 +27,16 @@ body{background:var(--bg);font-family:-apple-system,system-ui,"Segoe UI",Roboto,
 .sync-dot.syncing{background:var(--amber);animation:pulse .8s infinite}
 .sync-dot.err{background:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.role-badge{font-size:11px;padding:3px 9px;border-radius:4px;font-weight:500}
+.role-owner{background:var(--purple-bg);color:var(--purple)}
+.role-editor{background:var(--blue-bg);color:var(--blue)}
+.role-viewer{background:var(--green-bg);color:var(--green)}
 .tab-bar{display:flex;gap:2px;background:var(--bg3);border-radius:var(--r);padding:3px;flex-wrap:wrap}
 .tab{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-size:12px;font-family:inherit;transition:all .15s;white-space:nowrap}
 .tab.active{background:var(--bg);color:var(--tx);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tab.cfg-tab{color:var(--amber)}
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .filter-bar select{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:6px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none}
-.filter-bar select:focus{border-color:var(--blue)}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .kpi{background:var(--bg2);border-radius:var(--r);padding:12px 14px}
 .kpi-label{font-size:11px;color:var(--tx2);margin-bottom:4px}
@@ -77,61 +78,97 @@ tr:hover td{background:var(--bg2)}
 .cp-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle}
 .no-data{text-align:center;color:var(--tx2);padding:20px;font-size:12px}
 .btn{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:6px 14px;font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s}
-.btn:hover{background:var(--bg2)}
+.btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:default}
 .btn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.pri:hover{opacity:.9}
 .btn.sm{padding:4px 10px;font-size:11px}
 .btn.dan{background:var(--red-bg);color:var(--red);border-color:var(--red)}
-.info-bar{background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--r);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--blue);display:flex;align-items:center;gap:8px}
-@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.tab{padding:5px 10px;font-size:11px}}
+.form-box{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
+.form-hd{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.fg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fg-group{display:flex;flex-direction:column;gap:4px}
+.fg-group label{font-size:11px;color:var(--tx2);font-weight:500}
+.fg-group input,.fg-group select{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:6px 9px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.fg-group input:focus,.fg-group select:focus{border-color:var(--blue)}
+.btn-row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.sub-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:12px;width:fit-content}
+.sub-tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--tx2);cursor:pointer;font-size:12px;font-family:inherit}
+.sub-tab.active{background:var(--bg);color:var(--tx);font-weight:500}
+.sub-pg{display:none}.sub-pg.active{display:block}
+.cfg-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:14px;margin-bottom:12px}
+.cfg-title{font-size:13px;font-weight:600;margin-bottom:12px}
+.cfg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cfg-group{display:flex;flex-direction:column;gap:6px}
+.cfg-group-label{font-size:11px;font-weight:500;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em}
+.cfg-tag-wrap{display:flex;flex-wrap:wrap;gap:5px;min-height:28px}
+.cfg-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:12px}
+.cfg-tag .rm{cursor:pointer;color:var(--tx2);font-size:14px;line-height:1;padding:0 1px}
+.cfg-tag .rm:hover{color:var(--red)}
+.cfg-add-row{display:flex;gap:6px;margin-top:4px}
+.cfg-input{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:4px 8px;font-size:12px;font-family:inherit;outline:none;flex:1;min-width:0}
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:var(--r);font-size:13px;z-index:1000;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}.toast.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.toast.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.fg{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<!-- SETUP OVERLAY -->
-<div class="setup-overlay" id="setup-overlay">
-  <div class="setup-box">
-    <h2>Wealthcons — Kết nối Google Sheets</h2>
-    <p>Dashboard sẽ đọc dữ liệu trực tiếp từ Google Sheets của bạn. Mọi thay đổi trên Google Sheets sẽ tự động cập nhật trên dashboard.</p>
-    <div class="setup-steps">
-      <b>Bước 1:</b> Import file <code>wealthcons_dashboard_template.xlsx</code> lên Google Sheets<br>
-      <b>Bước 2:</b> Nhấn nút <b>Share</b> (góc phải trên) → chọn <b>"Anyone with the link"</b> → quyền <b>Viewer</b> → nhấn <b>Done</b><br>
-      <b>Bước 3:</b> Vào <b>File → Share → Publish to web</b> → chọn <b>Entire Document</b> → nhấn <b>Publish</b><br>
-      <b>Bước 4:</b> Copy <b>Spreadsheet ID</b> từ URL trên thanh địa chỉ:<br>
-      <code style="font-size:11px">https://docs.google.com/spreadsheets/d/<span style="color:var(--red);font-weight:700">SPREADSHEET_ID</span>/edit</code><br>
-      <b>Bước 5:</b> Dán ID vào ô bên dưới và nhấn Kết nối
-    </div>
-    <input type="text" id="setup-id" placeholder="Dán Spreadsheet ID vào đây..." autocomplete="off">
-    <div class="setup-err" id="setup-err">Không thể kết nối. Kiểm tra lại ID và đảm bảo đã Publish to web.</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn pri" onclick="connectSheet()" id="btn-connect">Kết nối</button>
-      <button class="btn" onclick="loadDemo()">Xem demo (dữ liệu mẫu)</button>
-    </div>
+<!-- SETUP DIALOG -->
+<div class="overlay" id="setup-overlay">
+<div class="dialog">
+  <h2>Wealthcons — Kết nối Dashboard</h2>
+  <p>Nhập URL của Google Apps Script đã deploy.</p>
+  <div class="dialog-steps">
+    <b>Bước 1:</b> Mở Google Sheets → Extensions → Apps Script<br>
+    <b>Bước 2:</b> Dán code từ file <code>Code.gs</code> → Lưu<br>
+    <b>Bước 3:</b> Deploy → New deployment → Web app → Execute as: Me, Access: Anyone → Deploy<br>
+    <b>Bước 4:</b> Copy URL web app → dán vào ô bên dưới
+  </div>
+  <input type="text" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec">
+  <input type="password" id="setup-pw" placeholder="Mật khẩu (bỏ trống = Viewer)">
+  <div class="dialog-err" id="setup-err"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn pri" onclick="doConnect()" id="btn-connect">Kết nối</button>
   </div>
 </div>
+</div>
 
-<!-- MAIN DASHBOARD -->
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MAIN -->
 <div id="main-dash" style="display:none">
 <div class="topbar">
-  <span class="topbar-title" id="proj-name">Wealthcons — Quản lý Thi công</span>
-  <div class="sync-ind" id="sync-ind">
-    <span class="sync-dot" id="sync-dot"></span>
-    <span id="sync-txt">Đã kết nối</span>
-  </div>
-  <button class="btn sm" onclick="forceRefresh()">↻ Làm mới</button>
-  <button class="btn sm" onclick="disconnect()">Ngắt kết nối</button>
-  <div class="tab-bar">
+  <span class="topbar-title" id="proj-name">Wealthcons Dashboard</span>
+  <div class="sync-ind"><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">—</span></div>
+  <span class="role-badge" id="role-badge"></span>
+  <button class="btn sm" onclick="refreshData()">↻ Làm mới</button>
+  <button class="btn sm" onclick="doDisconnect()">Đổi quyền</button>
+  <div class="tab-bar" id="tab-bar">
     <button class="tab active" onclick="goPage('tq',this)">Tổng quan</button>
     <button class="tab" onclick="goPage('td',this)">Tiến độ</button>
     <button class="tab" onclick="goPage('sd',this)">Shopdrawing</button>
     <button class="tab" onclick="goPage('rfi',this)">RFI</button>
+    <button class="tab" id="tab-nl" onclick="goPage('nl',this)">+ Nhập liệu</button>
+    <button class="tab cfg-tab" id="tab-cfg" onclick="toggleCfg()">⚙ Cấu hình</button>
   </div>
 </div>
 
-<div class="info-bar" id="info-bar" style="display:none">
-  <span>📊</span>
-  <span>Đang xem dữ liệu mẫu (demo). Để kết nối Google Sheets thật, nhấn "Ngắt kết nối" rồi nhập Spreadsheet ID.</span>
+<!-- CONFIG (owner only) -->
+<div id="cfg-panel" class="cfg-panel" style="display:none">
+  <div class="cfg-title">Cấu hình dự án</div>
+  <div class="cfg-grid">
+    <div class="cfg-group"><div class="cfg-group-label">Block / Phân khu</div><div class="cfg-tag-wrap" id="cfg-blocks"></div><div class="cfg-add-row"><input class="cfg-input" id="inp-block" placeholder="Thêm block..." onkeydown="if(event.key==='Enter')addCfgItem('blocks')"><button class="btn sm" onclick="addCfgItem('blocks')">+</button></div></div>
+    <div class="cfg-group"><div class="cfg-group-label">Tầng / Khu vực</div><div class="cfg-tag-wrap" id="cfg-floors"></div><div class="cfg-add-row"><input class="cfg-input" id="inp-floor" placeholder="Thêm tầng..." onkeydown="if(event.key==='Enter')addCfgItem('floors')"><button class="btn sm" onclick="addCfgItem('floors')">+</button></div></div>
+    <div class="cfg-group"><div class="cfg-group-label">Hạng mục</div><div class="cfg-tag-wrap" id="cfg-cats"></div><div class="cfg-add-row"><input class="cfg-input" id="inp-cat" placeholder="Thêm hạng mục..." onkeydown="if(event.key==='Enter')addCfgItem('cats')"><button class="btn sm" onclick="addCfgItem('cats')">+</button></div></div>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <label style="font-size:11px;color:var(--tx2)">Tên dự án:</label>
+    <input class="cfg-input" id="inp-projname" style="max-width:280px"><button class="btn sm pri" onclick="saveProjName()">Lưu tên</button>
+  </div>
 </div>
 
+<!-- FILTERS -->
 <div class="filter-bar" id="filter-bar">
   <select id="f-block" onchange="applyF()"><option value="">Tất cả phân khu</option></select>
   <select id="f-floor" onchange="applyF()"><option value="">Tất cả tầng</option></select>
@@ -143,562 +180,356 @@ tr:hover td{background:var(--bg2)}
   <div class="kpi-grid" id="kpi-grid"></div>
   <div class="alert" id="alert-bar"></div>
   <div class="chart-grid">
-    <div class="chart-box">
-      <div class="chart-title">Tiến độ thi công — Kế hoạch vs Thực tế (%)</div>
-      <div class="legend"><span class="leg"><span class="leg-sq" style="background:#185fa5"></span>Kế hoạch</span><span class="leg"><span class="leg-sq" style="background:#3b6d11"></span>Thực tế</span></div>
-      <div class="chart-wrap" style="height:190px"><canvas id="c-td"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Tiến độ theo phân khu</div>
-      <div class="legend"><span class="leg"><span class="leg-sq" style="background:#378add"></span>Kế hoạch</span><span class="leg"><span class="leg-sq" style="background:#639922"></span>Thực tế</span></div>
-      <div class="chart-wrap" style="height:190px"><canvas id="c-block"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Trạng thái RFI</div>
-      <div class="legend" id="rfi-leg"></div>
-      <div class="chart-wrap" style="height:190px"><canvas id="c-rfi"></canvas></div>
-    </div>
+    <div class="chart-box"><div class="chart-title">Tiến độ thi công — KH vs TT (%)</div><div class="legend"><span class="leg"><span class="leg-sq" style="background:#185fa5"></span>KH</span><span class="leg"><span class="leg-sq" style="background:#3b6d11"></span>TT</span></div><div class="chart-wrap" style="height:190px"><canvas id="c-td"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Tiến độ theo phân khu</div><div class="legend"><span class="leg"><span class="leg-sq" style="background:#378add"></span>KH</span><span class="leg"><span class="leg-sq" style="background:#639922"></span>TT</span></div><div class="chart-wrap" style="height:190px"><canvas id="c-block"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Trạng thái RFI</div><div class="legend" id="rfi-leg"></div><div class="chart-wrap" style="height:190px"><canvas id="c-rfi"></canvas></div></div>
   </div>
 </div>
 
 <!-- TIẾN ĐỘ -->
 <div id="page-td" class="page">
-  <div class="tbl-action">
-    <span class="sec-title">Danh sách công việc thi công</span>
-    <input class="srch" placeholder="Tìm kiếm..." oninput="renderTdTable(getFlt().t,this.value)">
-  </div>
-  <div class="tbl-wrap"><table>
-    <thead><tr><th>Mã CV</th><th>Tên công việc</th><th>Phân khu</th><th>Tầng</th><th>Hạng mục</th><th>KH%</th><th>TT%</th><th>Tiến độ</th><th>Trễ</th><th>Trạng thái</th><th>CP</th></tr></thead>
-    <tbody id="td-body"></tbody>
-  </table></div>
+  <div class="tbl-action"><span class="sec-title">Danh sách công việc</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderTdTable(getFlt().t,this.value)"></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã CV</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH%</th><th>TT%</th><th>Tiến độ</th><th>Trễ</th><th>TT</th><th>CP</th></tr></thead><tbody id="td-body"></tbody></table></div>
 </div>
 
 <!-- SHOPDRAWING -->
 <div id="page-sd" class="page">
   <div class="chart-grid" style="margin-bottom:12px">
-    <div class="chart-box">
-      <div class="chart-title">Trạng thái Shopdrawing</div>
-      <div class="chart-sub" id="sd-pie-sub">Tất cả phân khu — Tất cả tầng — Tất cả hạng mục</div>
-      <div class="legend" id="sd-pie-leg"></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="c-sd-pie"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Số lượng theo trạng thái</div>
-      <div class="chart-sub">Chi tiết số lượng từng trạng thái</div>
-      <div id="sd-status-cards" style="display:flex;flex-direction:column;gap:8px;padding:10px 0"></div>
-    </div>
+    <div class="chart-box"><div class="chart-title">Trạng thái Shopdrawing</div><div class="chart-sub" id="sd-pie-sub"></div><div class="legend" id="sd-pie-leg"></div><div class="chart-wrap" style="height:220px"><canvas id="c-sd-pie"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Số lượng theo trạng thái</div><div class="chart-sub">Chi tiết</div><div id="sd-status-cards" style="display:flex;flex-direction:column;gap:8px;padding:10px 0"></div></div>
   </div>
-  <div class="tbl-action">
-    <span class="sec-title">Theo dõi Shopdrawing</span>
-    <input class="srch" placeholder="Tìm kiếm..." oninput="renderSdTable(getFlt().s,this.value)">
-  </div>
-  <div class="tbl-wrap"><table>
-    <thead><tr><th>Mã SD</th><th>Tên bản vẽ</th><th>Phân khu</th><th>Tầng</th><th>Hạng mục</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>Trạng thái</th></tr></thead>
-    <tbody id="sd-body"></tbody>
-  </table></div>
+  <div class="tbl-action"><span class="sec-title">Theo dõi Shopdrawing</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderSdTable(getFlt().s,this.value)"></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã SD</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>TT</th></tr></thead><tbody id="sd-body"></tbody></table></div>
 </div>
 
 <!-- RFI -->
 <div id="page-rfi" class="page">
-  <div class="tbl-action">
-    <span class="sec-title">Theo dõi RFI</span>
-    <input class="srch" placeholder="Tìm kiếm..." oninput="renderRfiTable(getFlt().r,this.value)">
+  <div class="tbl-action"><span class="sec-title">Theo dõi RFI</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderRfiTable(getFlt().r,this.value)"></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Nội dung</th><th>PK</th><th>Tầng</th><th>HM</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>TT</th></tr></thead><tbody id="rfi-body"></tbody></table></div>
+</div>
+
+<!-- NHẬP LIỆU -->
+<div id="page-nl" class="page">
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="goSub('s-td',this)">Công việc</button>
+    <button class="sub-tab" onclick="goSub('s-sd',this)">Shopdrawing</button>
+    <button class="sub-tab" onclick="goSub('s-rfi',this)">RFI</button>
   </div>
-  <div class="tbl-wrap"><table>
-    <thead><tr><th>Mã RFI</th><th>Nội dung</th><th>Phân khu</th><th>Tầng</th><th>Hạng mục</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>Trạng thái</th></tr></thead>
-    <tbody id="rfi-body"></tbody>
-  </table></div>
+  <!-- Task form -->
+  <div id="s-td" class="sub-pg active">
+    <div class="form-box">
+      <div class="form-hd"><span id="td-form-title">Thêm công việc mới</span><button class="btn sm" onclick="resetTdForm()">Làm mới</button></div>
+      <input type="hidden" id="td-eid">
+      <div class="fg">
+        <div class="fg-group"><label>Mã CV *</label><input id="ti-id"></div>
+        <div class="fg-group"><label>Tên *</label><input id="ti-name"></div>
+        <div class="fg-group"><label>Phân khu *</label><select id="ti-block"></select></div>
+        <div class="fg-group"><label>Tầng *</label><select id="ti-floor"></select></div>
+        <div class="fg-group"><label>Hạng mục *</label><select id="ti-cat"></select></div>
+        <div class="fg-group"><label>Trọng số</label><input type="number" id="ti-w" step="0.01" min="0" max="1"></div>
+        <div class="fg-group"><label>KH bắt đầu</label><input type="date" id="ti-ps"></div>
+        <div class="fg-group"><label>KH kết thúc</label><input type="date" id="ti-pe"></div>
+        <div class="fg-group"><label>TT bắt đầu</label><input type="date" id="ti-as"></div>
+        <div class="fg-group"><label>TT kết thúc</label><input type="date" id="ti-ae"></div>
+        <div class="fg-group"><label>KH %</label><input type="number" id="ti-pp" min="0" max="100"></div>
+        <div class="fg-group"><label>TT %</label><input type="number" id="ti-ap" min="0" max="100"></div>
+        <div class="fg-group"><label>Đường găng</label><select id="ti-cp"><option value="FALSE">Không</option><option value="TRUE">Có</option></select></div>
+      </div>
+      <div class="btn-row"><button class="btn pri" onclick="saveTd()">Lưu</button></div>
+    </div>
+  </div>
+  <!-- SD form -->
+  <div id="s-sd" class="sub-pg">
+    <div class="form-box">
+      <div class="form-hd"><span id="sd-form-title">Thêm Shopdrawing mới</span><button class="btn sm" onclick="resetSdForm()">Làm mới</button></div>
+      <input type="hidden" id="sd-eid">
+      <div class="fg">
+        <div class="fg-group"><label>Mã SD *</label><input id="si-id"></div>
+        <div class="fg-group"><label>Tên bản vẽ *</label><input id="si-name"></div>
+        <div class="fg-group"><label>Mã CV liên kết</label><input id="si-tid"></div>
+        <div class="fg-group"><label>Phân khu *</label><select id="si-block"></select></div>
+        <div class="fg-group"><label>Tầng *</label><select id="si-floor"></select></div>
+        <div class="fg-group"><label>Hạng mục *</label><select id="si-cat"></select></div>
+        <div class="fg-group"><label>KH Ngày nộp</label><input type="date" id="si-ps"></div>
+        <div class="fg-group"><label>TT Ngày nộp</label><input type="date" id="si-as"></div>
+        <div class="fg-group"><label>KH Ngày duyệt</label><input type="date" id="si-pa"></div>
+        <div class="fg-group"><label>TT Ngày duyệt</label><input type="date" id="si-aa"></div>
+        <div class="fg-group"><label>Revision</label><input type="number" id="si-rev" min="0"></div>
+        <div class="fg-group"><label>Trạng thái *</label><select id="si-status"><option value="CHUA_NOP">Chưa nộp</option><option value="CHO_DUYET">Chờ duyệt</option><option value="REJECT">Bị từ chối</option><option value="DA_DUYET">Đã duyệt</option></select></div>
+      </div>
+      <div class="btn-row"><button class="btn pri" onclick="saveSd()">Lưu</button></div>
+    </div>
+  </div>
+  <!-- RFI form -->
+  <div id="s-rfi" class="sub-pg">
+    <div class="form-box">
+      <div class="form-hd"><span id="rfi-form-title">Thêm RFI mới</span><button class="btn sm" onclick="resetRfiForm()">Làm mới</button></div>
+      <input type="hidden" id="rfi-eid">
+      <div class="fg">
+        <div class="fg-group"><label>Mã RFI *</label><input id="ri-id"></div>
+        <div class="fg-group" style="grid-column:span 2"><label>Nội dung *</label><input id="ri-sub"></div>
+        <div class="fg-group"><label>Mã CV liên kết</label><input id="ri-tid"></div>
+        <div class="fg-group"><label>Phân khu *</label><select id="ri-block"></select></div>
+        <div class="fg-group"><label>Tầng *</label><select id="ri-floor"></select></div>
+        <div class="fg-group"><label>Hạng mục *</label><select id="ri-cat"></select></div>
+        <div class="fg-group"><label>Ngày phát sinh</label><input type="date" id="ri-rd"></div>
+        <div class="fg-group"><label>Hạn phản hồi</label><input type="date" id="ri-rqd"></div>
+        <div class="fg-group"><label>Ngày đã PH</label><input type="date" id="ri-rpd"></div>
+        <div class="fg-group"><label>Mức độ</label><select id="ri-imp"><option value="THAP">Thấp</option><option value="TRUNG_BINH" selected>Trung bình</option><option value="NGHIEM_TRONG">Nghiêm trọng</option></select></div>
+        <div class="fg-group"><label>Trạng thái</label><select id="ri-status"><option value="MO">Đang mở</option><option value="DONG">Đã đóng</option><option value="QUA_HAN">Quá hạn</option></select></div>
+      </div>
+      <div class="btn-row"><button class="btn pri" onclick="saveRfi()">Lưu</button></div>
+    </div>
+  </div>
 </div>
 </div>
 
 <script>
-// ==================== STATE ====================
 const TODAY=new Date();
-let SHEET_ID='';
+let API_URL='',ROLE='viewer',PW='';
 let CFG={projName:'',blocks:[],floors:[],cats:[]};
 let TASKS=[],SDS=[],RFIS=[];
 let fBlock='',fFloor='',fCat='';
 let CHS={};
 let pollTimer=null;
-let isDemo=false;
 
-// ==================== GOOGLE SHEETS FETCH ====================
-// Map sheet names to gid (sheet index)
-// Default Google Sheets gids: first sheet=0, then incremental
-// We'll detect gids dynamically or use sheet name export
-function sheetCSVUrl(sheetName){
-  // Use the pub export endpoint — more reliable for CORS
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(sheetName)}`;
+// ==================== API ====================
+async function api(params){
+  const url=new URL(API_URL);
+  for(const k in params)url.searchParams.set(k,typeof params[k]==='object'?JSON.stringify(params[k]):params[k]);
+  url.searchParams.set('pw',PW);
+  const resp=await fetch(url.toString());
+  return await resp.json();
 }
 
-function sheetCSVUrlAlt(sheetName){
-  // Fallback: gviz endpoint
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+async function apiWrite(action,data){
+  const url=new URL(API_URL);
+  url.searchParams.set('action',action);
+  url.searchParams.set('pw',PW);
+  url.searchParams.set('data',JSON.stringify(data));
+  setSyncStatus('syncing','Đang lưu...');
+  const resp=await fetch(url.toString());
+  const result=await resp.json();
+  if(result.ok){toast(result.message||'Thành công','ok');await refreshData()}
+  else{toast(result.error||'Lỗi','err')}
+  return result;
 }
 
-function sheetPubUrl(sheetName){
-  // Fallback 2: pub endpoint via pubhtml converted to csv
-  return `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
-}
-
-async function fetchSheet(sheetName){
-  // Try multiple endpoints
-  const urls=[
-    sheetCSVUrl(sheetName),
-    sheetCSVUrlAlt(sheetName)
-  ];
-  let lastErr=null;
-  for(const url of urls){
-    try{
-      const resp=await fetch(url,{redirect:'follow'});
-      if(!resp.ok){lastErr=new Error(`HTTP ${resp.status} from ${url}`);continue}
-      const ct=resp.headers.get('content-type')||'';
-      const text=await resp.text();
-      // Check if we got HTML error page instead of CSV
-      if(text.trim().startsWith('<!DOCTYPE')||text.trim().startsWith('<html')){
-        lastErr=new Error('Got HTML instead of CSV — sheet might not be published');
-        continue;
-      }
-      const result=Papa.parse(text,{header:true,skipEmptyLines:true});
-      if(result.data&&result.data.length>0)return result.data;
-      // If parsed but empty, might be wrong sheet name
-      lastErr=new Error('Parsed CSV but no data rows for sheet: '+sheetName);
-    }catch(e){lastErr=e}
+// ==================== CONNECT ====================
+async function doConnect(){
+  const url=document.getElementById('setup-url').value.trim();
+  const pw=document.getElementById('setup-pw').value.trim();
+  if(!url){showErr('Nhập URL Apps Script');return}
+  document.getElementById('btn-connect').disabled=true;
+  document.getElementById('btn-connect').textContent='Đang kết nối...';
+  API_URL=url;PW=pw;
+  try{
+    const r=await api({action:'check_role'});
+    if(!r.ok){showErr(r.error||'Sai mật khẩu');document.getElementById('btn-connect').disabled=false;document.getElementById('btn-connect').textContent='Kết nối';return}
+    ROLE=r.role;
+    localStorage.setItem('wc_api_url',url);
+    localStorage.setItem('wc_pw',pw);
+    document.getElementById('setup-overlay').style.display='none';
+    document.getElementById('main-dash').style.display='block';
+    applyRole();
+    await refreshData();
+    startPolling();
+  }catch(e){
+    showErr('Không kết nối được: '+e.message);
   }
-  throw lastErr||new Error('All fetch attempts failed for sheet: '+sheetName);
+  document.getElementById('btn-connect').disabled=false;
+  document.getElementById('btn-connect').textContent='Kết nối';
 }
 
-async function fetchAllData(){
+function doDisconnect(){
+  if(pollTimer)clearInterval(pollTimer);
+  localStorage.removeItem('wc_api_url');localStorage.removeItem('wc_pw');
+  document.getElementById('setup-overlay').style.display='flex';
+  document.getElementById('main-dash').style.display='none';
+  document.getElementById('setup-pw').value='';
+  document.getElementById('setup-err').style.display='none';
+}
+
+function showErr(msg){const el=document.getElementById('setup-err');el.textContent=msg;el.style.display='block'}
+
+async function refreshData(){
   setSyncStatus('syncing','Đang tải...');
   try{
-    // Fetch each sheet individually to identify which fails
-    let cfgRows,taskRows,sdRows,rfiRows;
-    try{cfgRows=await fetchSheet('CONFIG')}catch(e){console.error('CONFIG fetch failed:',e);cfgRows=[]}
-    try{taskRows=await fetchSheet('TASKS')}catch(e){console.error('TASKS fetch failed:',e);throw new Error('Không đọc được sheet TASKS: '+e.message)}
-    try{sdRows=await fetchSheet('SD')}catch(e){console.error('SD fetch failed:',e);throw new Error('Không đọc được sheet SD: '+e.message)}
-    try{rfiRows=await fetchSheet('RFI')}catch(e){console.error('RFI fetch failed:',e);throw new Error('Không đọc được sheet RFI: '+e.message)}
-    parseCfg(cfgRows);
-    parseTasks(taskRows);
-    parseSDs(sdRows);
-    parseRFIs(rfiRows);
-    document.getElementById('proj-name').textContent=CFG.projName||'Wealthcons Dashboard';
-    rebuildFilters();
-    render();
-    setSyncStatus('ok','Đã cập nhật — '+new Date().toLocaleTimeString('vi'));
-    return true;
-  }catch(e){
-    console.error('Fetch error:',e);
-    setSyncStatus('err','Lỗi: '+e.message);
-    return false;
-  }
+    const r=await api({action:'read'});
+    if(!r.ok){setSyncStatus('err',r.error);return}
+    parseCfg(r.data.config);parseTasks(r.data.tasks);parseSDs(r.data.sds);parseRFIs(r.data.rfis);
+    document.getElementById('proj-name').textContent=CFG.projName||'Dashboard';
+    document.getElementById('inp-projname').value=CFG.projName||'';
+    rebuildFilters();rebuildFormSelects();renderCfgTags();render();
+    setSyncStatus('ok','Cập nhật — '+new Date().toLocaleTimeString('vi'));
+  }catch(e){setSyncStatus('err','Lỗi: '+e.message)}
 }
+
+function startPolling(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refreshData,20000)}
+
+// ==================== AUTO-RECONNECT ====================
+(function(){
+  const url=localStorage.getItem('wc_api_url');
+  const pw=localStorage.getItem('wc_pw');
+  if(url){
+    document.getElementById('setup-url').value=url;
+    document.getElementById('setup-pw').value=pw||'';
+    API_URL=url;PW=pw||'';
+    api({action:'check_role'}).then(r=>{
+      if(r.ok){ROLE=r.role;document.getElementById('setup-overlay').style.display='none';document.getElementById('main-dash').style.display='block';applyRole();refreshData();startPolling()}
+    }).catch(()=>{});
+  }
+})();
+
+// ==================== ROLE ====================
+function applyRole(){
+  const b=document.getElementById('role-badge');
+  const nl=document.getElementById('tab-nl');
+  const cfg=document.getElementById('tab-cfg');
+  if(ROLE==='owner'){b.textContent='Owner';b.className='role-badge role-owner';nl.style.display='';cfg.style.display=''}
+  else if(ROLE==='editor'){b.textContent='Editor';b.className='role-badge role-editor';nl.style.display='';cfg.style.display='none'}
+  else{b.textContent='Viewer';b.className='role-badge role-viewer';nl.style.display='none';cfg.style.display='none'}
+}
+
+function canEdit(){return ROLE==='owner'||ROLE==='editor'}
+function isOwner(){return ROLE==='owner'}
 
 // ==================== PARSERS ====================
 function parseCfg(rows){
-  CFG={projName:'Wealthcons Dashboard',blocks:[],floors:[],cats:[]};
-  rows.forEach(r=>{
-    const k=(r.KEY||'').trim();
-    const v=(r.VALUE||'').trim();
+  CFG={projName:'Dashboard',blocks:[],floors:[],cats:[]};
+  (rows||[]).forEach(r=>{const k=(r.KEY||'').trim(),v=(r.VALUE||'').trim();
     if(k==='PROJ_NAME')CFG.projName=v;
     if(k==='BLOCKS')CFG.blocks=v.split(',').map(s=>s.trim()).filter(Boolean);
     if(k==='FLOORS')CFG.floors=v.split(',').map(s=>s.trim()).filter(Boolean);
     if(k==='CATS')CFG.cats=v.split(',').map(s=>s.trim()).filter(Boolean);
   });
 }
-
-function parseTasks(rows){
-  TASKS=rows.filter(r=>r.MA_CV).map(r=>({
-    id:r.MA_CV.trim(),
-    name:(r.TEN_CV||'').trim(),
-    block:(r.PHAN_KHU||'').trim(),
-    floor:(r.TANG||'').trim(),
-    cat:(r.HANG_MUC||'').trim(),
-    ps:r.KH_BAT_DAU||null,
-    pe:r.KH_KET_THUC||null,
-    as:r.TT_BAT_DAU||null,
-    ae:r.TT_KET_THUC||null,
-    pp:parseFloat(r.KH_PHAN_TRAM)||0,
-    ap:parseFloat(r.TT_PHAN_TRAM)||0,
-    w:parseFloat(r.TRONG_SO)||0.05,
-    cp:(r.DUONG_GANG||'').toUpperCase()==='TRUE'
-  }));
-}
-
-function parseSDs(rows){
-  SDS=rows.filter(r=>r.MA_SD).map(r=>({
-    id:r.MA_SD.trim(),
-    name:(r.TEN_BAN_VE||'').trim(),
-    tid:(r.MA_CV_LIEN_KET||'').trim(),
-    block:(r.PHAN_KHU||'').trim(),
-    floor:(r.TANG||'').trim(),
-    cat:(r.HANG_MUC||'').trim(),
-    ps:r.KH_NGAY_NOP||null,
-    as:r.TT_NGAY_NOP||null,
-    pa:r.KH_NGAY_DUYET||null,
-    aa:r.TT_NGAY_DUYET||null,
-    rev:parseInt(r.LAN_SUA)||0,
-    status:(r.TRANG_THAI||'CHUA_NOP').trim()
-  }));
-}
-
-function parseRFIs(rows){
-  RFIS=rows.filter(r=>r.MA_RFI).map(r=>({
-    id:r.MA_RFI.trim(),
-    subject:(r.NOI_DUNG||'').trim(),
-    tid:(r.MA_CV_LIEN_KET||'').trim(),
-    block:(r.PHAN_KHU||'').trim(),
-    floor:(r.TANG||'').trim(),
-    cat:(r.HANG_MUC||'').trim(),
-    rd:r.NGAY_PHAT_SINH||null,
-    rqd:r.HAN_PHAN_HOI||null,
-    rpd:r.NGAY_DA_PHAN_HOI||null,
-    imp:(r.MUC_DO||'TRUNG_BINH').trim(),
-    status:(r.TRANG_THAI||'MO').trim()
-  }));
-}
-
-// ==================== DEMO DATA ====================
-function loadDemoData(){
-  CFG={projName:'Wealthcons — Demo Dashboard',blocks:['Block A','Block B','Block C'],floors:['Tầng hầm','Tầng 1','Tầng 2','Tầng 3'],cats:['Móng','Kết cấu','MEP','Hoàn thiện','Cơ điện','Xây tường']};
-  TASKS=[
-    {id:'WC-A-T1-KC-001',name:'Cột – vách tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Kết cấu',ps:'2025-02-15',pe:'2025-03-10',as:'2025-02-18',ae:'2025-03-15',ap:100,pp:100,w:0.07,cp:true},
-    {id:'WC-A-T1-XD-001',name:'Xây tường tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Xây tường',ps:'2025-03-12',pe:'2025-04-05',as:'2025-03-15',ae:null,ap:70,pp:100,w:0.05,cp:false},
-    {id:'WC-A-T1-MEP-001',name:'Hệ điều hòa không khí tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'MEP',ps:'2025-03-20',pe:'2025-04-20',as:'2025-03-25',ae:null,ap:45,pp:90,w:0.04,cp:false},
-    {id:'WC-A-T1-CD-001',name:'Hệ điện chiếu sáng tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Cơ điện',ps:'2025-04-01',pe:'2025-05-01',as:null,ae:null,ap:0,pp:50,w:0.03,cp:false},
-    {id:'WC-A-T2-KC-001',name:'Đổ bê tông sàn tầng 2 Block A',block:'Block A',floor:'Tầng 2',cat:'Kết cấu',ps:'2025-03-10',pe:'2025-04-05',as:'2025-03-12',ae:'2025-04-10',ap:100,pp:100,w:0.07,cp:true},
-    {id:'WC-B-T1-KC-001',name:'Cột – vách tầng 1 Block B',block:'Block B',floor:'Tầng 1',cat:'Kết cấu',ps:'2025-03-01',pe:'2025-03-25',as:'2025-03-03',ae:'2025-03-28',ap:100,pp:100,w:0.07,cp:false},
-    {id:'WC-B-T1-MEP-001',name:'Hệ điều hòa tầng 1 Block B',block:'Block B',floor:'Tầng 1',cat:'MEP',ps:'2025-04-01',pe:'2025-05-10',as:'2025-04-05',ae:null,ap:40,pp:75,w:0.04,cp:false},
-    {id:'WC-B-T2-KC-001',name:'Đổ sàn tầng 2 Block B',block:'Block B',floor:'Tầng 2',cat:'Kết cấu',ps:'2025-04-01',pe:'2025-05-01',as:'2025-04-03',ae:null,ap:65,pp:100,w:0.07,cp:false},
-    {id:'WC-C-TH-MON-001',name:'Bê tông lót móng Block C',block:'Block C',floor:'Tầng hầm',cat:'Móng',ps:'2025-01-10',pe:'2025-02-05',as:'2025-01-12',ae:'2025-02-08',ap:100,pp:100,w:0.06,cp:true},
-    {id:'WC-C-T1-KC-001',name:'Cột tầng 1 Block C',block:'Block C',floor:'Tầng 1',cat:'Kết cấu',ps:'2025-02-10',pe:'2025-03-15',as:'2025-02-12',ae:'2025-03-18',ap:100,pp:100,w:0.07,cp:false},
-    {id:'WC-C-T1-HT-001',name:'Trát tường tầng 1 Block C',block:'Block C',floor:'Tầng 1',cat:'Hoàn thiện',ps:'2025-03-20',pe:'2025-04-30',as:'2025-03-25',ae:null,ap:30,pp:70,w:0.04,cp:false},
-  ];
-  SDS=[
-    {id:'SD-A-T1-KC-001',tid:'WC-A-T1-KC-001',name:'SD cốp pha cột tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Kết cấu',ps:'2025-02-01',as:'2025-02-04',pa:'2025-02-14',aa:'2025-02-18',rev:1,status:'DA_DUYET'},
-    {id:'SD-A-T1-XD-001',tid:'WC-A-T1-XD-001',name:'SD xây tường tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Xây tường',ps:'2025-03-01',as:'2025-03-05',pa:'2025-03-15',aa:null,rev:2,status:'CHO_DUYET'},
-    {id:'SD-A-T1-MEP-001',tid:'WC-A-T1-MEP-001',name:'SD điều hòa tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'MEP',ps:'2025-03-10',as:'2025-03-18',pa:'2025-03-28',aa:null,rev:3,status:'REJECT'},
-    {id:'SD-A-T1-CD-001',tid:'WC-A-T1-CD-001',name:'SD hệ điện tầng 1 Block A',block:'Block A',floor:'Tầng 1',cat:'Cơ điện',ps:'2025-03-20',as:null,pa:'2025-04-05',aa:null,rev:0,status:'CHUA_NOP'},
-    {id:'SD-A-T2-KC-001',tid:'WC-A-T2-KC-001',name:'SD sàn tầng 2 Block A',block:'Block A',floor:'Tầng 2',cat:'Kết cấu',ps:'2025-03-01',as:'2025-03-04',pa:'2025-03-18',aa:'2025-03-22',rev:1,status:'DA_DUYET'},
-    {id:'SD-B-T1-KC-001',tid:'WC-B-T1-KC-001',name:'SD cốp pha cột tầng 1 Block B',block:'Block B',floor:'Tầng 1',cat:'Kết cấu',ps:'2025-02-18',as:'2025-02-20',pa:'2025-03-04',aa:'2025-03-06',rev:1,status:'DA_DUYET'},
-    {id:'SD-B-T1-MEP-001',tid:'WC-B-T1-MEP-001',name:'SD điều hòa tầng 1 Block B',block:'Block B',floor:'Tầng 1',cat:'MEP',ps:'2025-03-20',as:'2025-03-25',pa:'2025-04-05',aa:null,rev:2,status:'CHO_DUYET'},
-    {id:'SD-C-TH-MON-001',tid:'WC-C-TH-MON-001',name:'SD móng Block C',block:'Block C',floor:'Tầng hầm',cat:'Móng',ps:'2024-12-25',as:'2024-12-28',pa:'2025-01-08',aa:'2025-01-10',rev:1,status:'DA_DUYET'},
-  ];
-  RFIS=[
-    {id:'RFI-A-T1-001',tid:'WC-A-T1-KC-001',subject:'Xung đột cốt thép cột C5 và tuyến ống MEP tầng 1',block:'Block A',floor:'Tầng 1',cat:'Kết cấu',rd:'2025-02-20',rqd:'2025-02-27',rpd:'2025-02-26',status:'DONG',imp:'NGHIEM_TRONG'},
-    {id:'RFI-A-T1-002',tid:'WC-A-T1-MEP-001',subject:'Tuyến ống điều hòa xuyên dầm chính không có lỗ đặt sẵn',block:'Block A',floor:'Tầng 1',cat:'MEP',rd:'2025-03-25',rqd:'2025-04-01',rpd:null,status:'QUA_HAN',imp:'NGHIEM_TRONG'},
-    {id:'RFI-A-T2-001',tid:'WC-A-T2-KC-001',subject:'Chiều dày sàn tầng 2 mâu thuẫn giữa kiến trúc và kết cấu',block:'Block A',floor:'Tầng 2',cat:'Kết cấu',rd:'2025-03-15',rqd:'2025-03-22',rpd:null,status:'MO',imp:'NGHIEM_TRONG'},
-    {id:'RFI-B-T1-001',tid:'WC-B-T1-KC-001',subject:'Cao độ dầm tầng 1 Block B thấp hơn bản vẽ kiến trúc 5cm',block:'Block B',floor:'Tầng 1',cat:'Kết cấu',rd:'2025-03-05',rqd:'2025-03-12',rpd:'2025-03-11',status:'DONG',imp:'TRUNG_BINH'},
-    {id:'RFI-B-T1-002',tid:'WC-B-T1-XD-001',subject:'Vị trí cửa sổ tường ngoài Block B tầng 1 chưa khớp',block:'Block B',floor:'Tầng 1',cat:'Xây tường',rd:'2025-04-02',rqd:'2025-04-09',rpd:null,status:'MO',imp:'TRUNG_BINH'},
-    {id:'RFI-C-T1-001',tid:'WC-C-T1-HT-001',subject:'Độ dày trát tường Block C tầng 1 chưa ghi trong bản vẽ',block:'Block C',floor:'Tầng 1',cat:'Hoàn thiện',rd:'2025-03-26',rqd:'2025-04-02',rpd:null,status:'MO',imp:'THAP'},
-  ];
-}
-
-// ==================== CONNECT / DISCONNECT ====================
-async function connectSheet(){
-  const id=document.getElementById('setup-id').value.trim();
-  if(!id){document.getElementById('setup-err').textContent='Vui lòng nhập Spreadsheet ID';document.getElementById('setup-err').style.display='block';return}
-  document.getElementById('btn-connect').textContent='Đang kết nối...';
-  document.getElementById('btn-connect').disabled=true;
-  SHEET_ID=id;
-  const ok=await fetchAllData();
-  if(ok){
-    localStorage.setItem('wc_sheet_id',id);
-    isDemo=false;
-    document.getElementById('setup-overlay').style.display='none';
-    document.getElementById('main-dash').style.display='block';
-    document.getElementById('info-bar').style.display='none';
-    startPolling();
-  }else{
-    document.getElementById('setup-err').textContent='Không thể kết nối. Kiểm tra: (1) ID đúng chưa, (2) Đã Publish to web chưa, (3) Tên các sheet tab phải đúng: CONFIG, TASKS, SD, RFI';
-    document.getElementById('setup-err').style.display='block';
-  }
-  document.getElementById('btn-connect').textContent='Kết nối';
-  document.getElementById('btn-connect').disabled=false;
-}
-
-function loadDemo(){
-  isDemo=true;
-  loadDemoData();
-  document.getElementById('setup-overlay').style.display='none';
-  document.getElementById('main-dash').style.display='block';
-  document.getElementById('info-bar').style.display='flex';
-  document.getElementById('proj-name').textContent=CFG.projName;
-  rebuildFilters();
-  render();
-  setSyncStatus('ok','Demo — dữ liệu mẫu');
-}
-
-function disconnect(){
-  if(pollTimer)clearInterval(pollTimer);
-  localStorage.removeItem('wc_sheet_id');
-  SHEET_ID='';isDemo=false;
-  document.getElementById('setup-overlay').style.display='flex';
-  document.getElementById('main-dash').style.display='none';
-  document.getElementById('setup-err').style.display='none';
-  document.getElementById('setup-id').value='';
-}
-
-function forceRefresh(){
-  if(isDemo)return;
-  fetchAllData();
-}
-
-function startPolling(){
-  if(pollTimer)clearInterval(pollTimer);
-  pollTimer=setInterval(()=>{
-    if(!isDemo&&SHEET_ID)fetchAllData();
-  },15000); // 15 giây
-}
-
-// ==================== AUTO-RECONNECT ====================
-(function autoConnect(){
-  const saved=localStorage.getItem('wc_sheet_id');
-  if(saved){
-    SHEET_ID=saved;
-    document.getElementById('setup-overlay').style.display='none';
-    document.getElementById('main-dash').style.display='block';
-    fetchAllData().then(ok=>{
-      if(ok)startPolling();
-      else{setSyncStatus('err','Mất kết nối — thử lại...');setTimeout(()=>fetchAllData().then(ok2=>{if(ok2)startPolling()}),5000)}
-    });
-  }
-})();
+function parseTasks(rows){TASKS=(rows||[]).filter(r=>r.MA_CV).map(r=>({id:r.MA_CV.trim(),name:(r.TEN_CV||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),ps:r.KH_BAT_DAU||'',pe:r.KH_KET_THUC||'',as:r.TT_BAT_DAU||'',ae:r.TT_KET_THUC||'',pp:parseFloat(r.KH_PHAN_TRAM)||0,ap:parseFloat(r.TT_PHAN_TRAM)||0,w:parseFloat(r.TRONG_SO)||0.05,cp:(r.DUONG_GANG||'').toUpperCase()==='TRUE'}))}
+function parseSDs(rows){SDS=(rows||[]).filter(r=>r.MA_SD).map(r=>({id:r.MA_SD.trim(),name:(r.TEN_BAN_VE||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),ps:r.KH_NGAY_NOP||'',as:r.TT_NGAY_NOP||'',pa:r.KH_NGAY_DUYET||'',aa:r.TT_NGAY_DUYET||'',rev:parseInt(r.LAN_SUA)||0,status:(r.TRANG_THAI||'CHUA_NOP').trim()}))}
+function parseRFIs(rows){RFIS=(rows||[]).filter(r=>r.MA_RFI).map(r=>({id:r.MA_RFI.trim(),subject:(r.NOI_DUNG||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),rd:r.NGAY_PHAT_SINH||'',rqd:r.HAN_PHAN_HOI||'',rpd:r.NGAY_DA_PHAN_HOI||'',imp:(r.MUC_DO||'TRUNG_BINH').trim(),status:(r.TRANG_THAI||'MO').trim()}))}
 
 // ==================== HELPERS ====================
-function dd(s){return s?new Date(s):null}
+function dd(s){return s&&s.length>=10?new Date(s):null}
 function dDiff(a,b){if(!a||!b)return null;return Math.round((new Date(b)-new Date(a))/86400000)}
-function fmtD(s){if(!s)return '—';const d=String(s);if(d.length>=10)return d.slice(5).replace('-','/');return d}
+function fmtD(s){if(!s||s.length<10)return'—';return s.slice(5).replace('-','/')}
+function gv(id){const el=document.getElementById(id);return el?el.value.trim():''}
+function setv(id,val){const el=document.getElementById(id);if(el)el.value=val||''}
+function getStatus(t){if(t.ap>=100)return'DONE';if(dd(t.pe)&&dd(t.pe)<TODAY&&t.ap<100)return'TRE';if(t.as)return'DANG';return'CBA'}
+function getDelay(t){const st=getStatus(t);if(st==='DONE'&&t.ae&&t.pe)return Math.max(0,dDiff(t.pe,t.ae));if(st==='TRE'&&t.pe)return Math.max(0,dDiff(t.pe,TODAY.toISOString().slice(0,10)));return 0}
+function getFlt(){return{t:TASKS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),s:SDS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),r:RFIS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat))}}
+function setSyncStatus(s,t){const d=document.getElementById('sync-dot'),x=document.getElementById('sync-txt');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':'')+(s==='err'?' err':'');x.textContent=t}
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'ok');setTimeout(()=>t.className='toast',3000)}
 
-function getStatus(t){
-  if(t.ap>=100)return'DONE';
-  if(dd(t.pe)&&dd(t.pe)<TODAY&&t.ap<100)return'TRE';
-  if(t.as)return'DANG';
-  return'CBA';
+// ==================== CONFIG ====================
+function renderCfgTags(){
+  const m={blocks:'cfg-blocks',floors:'cfg-floors',cats:'cfg-cats'};
+  for(const k in m){const el=document.getElementById(m[k]);if(!el)continue;
+    el.innerHTML=CFG[k].map(v=>`<span class="cfg-tag">${v}${isOwner()?`<span class="rm" onclick="removeCfgItem('${k}','${v}')">×</span>`:''}</span>`).join('')}
 }
-function getDelay(t){
-  const st=getStatus(t);
-  if(st==='DONE'&&t.ae&&t.pe)return Math.max(0,dDiff(t.pe,t.ae));
-  if(st==='TRE'&&t.pe)return Math.max(0,dDiff(t.pe,TODAY.toISOString().slice(0,10)));
-  return 0;
+async function addCfgItem(key){
+  if(!isOwner())return;
+  const inp={blocks:'inp-block',floors:'inp-floor',cats:'inp-cat'}[key];
+  const val=document.getElementById(inp).value.trim();if(!val)return;
+  if(!CFG[key].includes(val))CFG[key].push(val);
+  document.getElementById(inp).value='';
+  const cfgKey={blocks:'BLOCKS',floors:'FLOORS',cats:'CATS'}[key];
+  await apiWrite('edit_config',{updates:{[cfgKey]:CFG[key].join(',')}});
 }
-
-function getFlt(){
-  return{
-    t:TASKS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),
-    s:SDS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),
-    r:RFIS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat))
-  };
+async function removeCfgItem(key,val){
+  if(!isOwner())return;
+  CFG[key]=CFG[key].filter(v=>v!==val);
+  const cfgKey={blocks:'BLOCKS',floors:'FLOORS',cats:'CATS'}[key];
+  await apiWrite('edit_config',{updates:{[cfgKey]:CFG[key].join(',')}});
 }
-
-function setSyncStatus(status,txt){
-  const dot=document.getElementById('sync-dot');
-  const stxt=document.getElementById('sync-txt');
-  if(!dot||!stxt)return;
-  dot.className='sync-dot'+(status==='syncing'?' syncing':'')+(status==='err'?' err':'');
-  stxt.textContent=txt;
+async function saveProjName(){
+  if(!isOwner())return;
+  const v=gv('inp-projname');if(!v)return;
+  await apiWrite('edit_config',{updates:{PROJ_NAME:v}});
 }
 
 function rebuildFilters(){
   const fb=document.getElementById('f-block'),ff=document.getElementById('f-floor'),fc=document.getElementById('f-cat');
-  if(!fb)return;
-  const vb=fb.value,vf=ff.value,vc=fc.value;
+  if(!fb)return;const vb=fb.value,vf=ff.value,vc=fc.value;
   fb.innerHTML='<option value="">Tất cả phân khu</option>'+CFG.blocks.map(v=>`<option${v===vb?' selected':''}>${v}</option>`).join('');
   ff.innerHTML='<option value="">Tất cả tầng</option>'+CFG.floors.map(v=>`<option${v===vf?' selected':''}>${v}</option>`).join('');
   fc.innerHTML='<option value="">Tất cả hạng mục</option>'+CFG.cats.map(v=>`<option${v===vc?' selected':''}>${v}</option>`).join('');
 }
-
-// ==================== KPI ====================
-function calcKPI(t,s,r){
-  const tw=t.reduce((a,x)=>a+x.w,0)||1;
-  const ap=t.reduce((a,x)=>a+x.ap*x.w,0)/tw;
-  const pp=t.reduce((a,x)=>a+x.pp*x.w,0)/tw;
-  return{ap:ap.toFixed(1),pp:pp.toFixed(1),delta:(ap-pp).toFixed(1),
-    delay:t.filter(x=>getStatus(x)==='TRE').length,
-    cpDelay:t.filter(x=>x.cp&&getStatus(x)==='TRE').length,
-    sdDuyet:s.filter(x=>x.status==='DA_DUYET').length,sdTotal:s.length,
-    rfiMo:r.filter(x=>x.status==='MO'||x.status==='QUA_HAN').length,
-    rfiQH:r.filter(x=>x.status==='QUA_HAN').length};
+function rebuildFormSelects(){
+  ['ti-block','si-block','ri-block'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const c=el.value;el.innerHTML='<option value="">--</option>'+CFG.blocks.map(v=>`<option${v===c?' selected':''}>${v}</option>`).join('')});
+  ['ti-floor','si-floor','ri-floor'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const c=el.value;el.innerHTML='<option value="">--</option>'+CFG.floors.map(v=>`<option${v===c?' selected':''}>${v}</option>`).join('')});
+  ['ti-cat','si-cat','ri-cat'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const c=el.value;el.innerHTML='<option value="">--</option>'+CFG.cats.map(v=>`<option${v===c?' selected':''}>${v}</option>`).join('')});
 }
+function toggleCfg(){if(!isOwner())return;const p=document.getElementById('cfg-panel');p.style.display=p.style.display==='none'?'block':'none'}
 
-function renderKPI(kpi){
-  const delta=parseFloat(kpi.delta);
-  document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi ${delta>=0?'ok':delta>-10?'warn':'bad'}">
-      <div class="kpi-label">Thực tế vs Kế hoạch</div>
-      <div class="kpi-val">${kpi.ap}%</div>
-      <div class="kpi-sub">KH: ${kpi.pp}% | <span style="color:${delta>=0?'var(--green)':'var(--red)'}">${delta>=0?'+':''}${kpi.delta}%</span></div>
-    </div>
-    <div class="kpi ${kpi.delay>0?'bad':'ok'}">
-      <div class="kpi-label">Công việc trễ</div>
-      <div class="kpi-val">${kpi.delay}</div>
-      <div class="kpi-sub">Đường găng: ${kpi.cpDelay}</div>
-    </div>
-    <div class="kpi ${kpi.sdTotal>0&&kpi.sdDuyet/kpi.sdTotal<0.7?'warn':'ok'}">
-      <div class="kpi-label">SD đã duyệt</div>
-      <div class="kpi-val">${kpi.sdDuyet}/${kpi.sdTotal}</div>
-      <div class="kpi-sub">${kpi.sdTotal?Math.round(kpi.sdDuyet/kpi.sdTotal*100):0}%</div>
-    </div>
-    <div class="kpi ${kpi.rfiQH>0?'bad':kpi.rfiMo>0?'warn':'ok'}">
-      <div class="kpi-label">RFI đang mở</div>
-      <div class="kpi-val">${kpi.rfiMo}</div>
-      <div class="kpi-sub">Quá hạn: ${kpi.rfiQH}</div>
-    </div>`;
-}
-
-function renderAlert(kpi){
-  const msgs=[];
-  if(kpi.cpDelay>0)msgs.push(`⚠ ${kpi.cpDelay} công việc đường găng đang trễ`);
-  if(kpi.rfiQH>0)msgs.push(`⚠ ${kpi.rfiQH} RFI quá hạn phản hồi`);
-  const rej=SDS.filter(s=>s.status==='REJECT').length;
-  if(rej>0)msgs.push(`⚠ ${rej} Shopdrawing bị từ chối`);
-  const bar=document.getElementById('alert-bar');
-  bar.innerHTML=msgs.join('<br>');bar.style.display=msgs.length?'block':'none';
-}
-
-// ==================== CHARTS ====================
-function mkCh(id,type,data,opts={}){
-  const ctx=document.getElementById(id);if(!ctx)return;
-  if(CHS[id])CHS[id].destroy();
-  CHS[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},...opts}});
-}
-
+// ==================== KPI + CHARTS ====================
+function calcKPI(t,s,r){const tw=t.reduce((a,x)=>a+x.w,0)||1;const ap=t.reduce((a,x)=>a+x.ap*x.w,0)/tw;const pp=t.reduce((a,x)=>a+x.pp*x.w,0)/tw;return{ap:ap.toFixed(1),pp:pp.toFixed(1),delta:(ap-pp).toFixed(1),delay:t.filter(x=>getStatus(x)==='TRE').length,cpDelay:t.filter(x=>x.cp&&getStatus(x)==='TRE').length,sdDuyet:s.filter(x=>x.status==='DA_DUYET').length,sdTotal:s.length,rfiMo:r.filter(x=>x.status==='MO'||x.status==='QUA_HAN').length,rfiQH:r.filter(x=>x.status==='QUA_HAN').length}}
+function renderKPI(k){const d=parseFloat(k.delta);document.getElementById('kpi-grid').innerHTML=`<div class="kpi ${d>=0?'ok':d>-10?'warn':'bad'}"><div class="kpi-label">TT vs KH</div><div class="kpi-val">${k.ap}%</div><div class="kpi-sub">KH:${k.pp}% | <span style="color:${d>=0?'var(--green)':'var(--red)'}">${d>=0?'+':''}${k.delta}%</span></div></div><div class="kpi ${k.delay>0?'bad':'ok'}"><div class="kpi-label">Công việc trễ</div><div class="kpi-val">${k.delay}</div><div class="kpi-sub">Đường găng: ${k.cpDelay}</div></div><div class="kpi ${k.sdTotal>0&&k.sdDuyet/k.sdTotal<.7?'warn':'ok'}"><div class="kpi-label">SD đã duyệt</div><div class="kpi-val">${k.sdDuyet}/${k.sdTotal}</div><div class="kpi-sub">${k.sdTotal?Math.round(k.sdDuyet/k.sdTotal*100):0}%</div></div><div class="kpi ${k.rfiQH>0?'bad':k.rfiMo>0?'warn':'ok'}"><div class="kpi-label">RFI mở</div><div class="kpi-val">${k.rfiMo}</div><div class="kpi-sub">Quá hạn: ${k.rfiQH}</div></div>`}
+function renderAlert(k){const m=[];if(k.cpDelay>0)m.push(`⚠ ${k.cpDelay} CV đường găng trễ`);if(k.rfiQH>0)m.push(`⚠ ${k.rfiQH} RFI quá hạn`);const rej=SDS.filter(s=>s.status==='REJECT').length;if(rej>0)m.push(`⚠ ${rej} SD bị từ chối`);const b=document.getElementById('alert-bar');b.innerHTML=m.join('<br>');b.style.display=m.length?'block':'none'}
+function mkCh(id,type,data,opts={}){const ctx=document.getElementById(id);if(!ctx)return;if(CHS[id])CHS[id].destroy();CHS[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},...opts}})}
 function renderCharts(t,s,r){
-  const wks=['T1','T2','T3','T4','T5','T6','T7'];
-  const pl=[15,28,42,55,65,75,85];
   const ap2=parseFloat(calcKPI(t,[],[]).ap)||0;
-  const ac=[12,24,38,52,60,68,Math.min(100,ap2)];
-  mkCh('c-td','line',{labels:wks,datasets:[
-    {label:'KH',data:pl,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,.08)',fill:true,tension:.4,pointRadius:3},
-    {label:'TT',data:ac,borderColor:'#3b6d11',backgroundColor:'rgba(59,109,17,.08)',fill:true,tension:.4,pointRadius:3}
-  ]},{scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}});
-
-  const blocks=CFG.blocks.filter(b=>t.some(x=>x.block===b));
-  if(blocks.length){
-    const bpp=blocks.map(b=>{const tx=t.filter(x=>x.block===b);const tw=tx.reduce((a,x)=>a+x.w,0)||1;return+(tx.reduce((a,x)=>a+x.pp*x.w,0)/tw).toFixed(1)});
-    const bap=blocks.map(b=>{const tx=t.filter(x=>x.block===b);const tw=tx.reduce((a,x)=>a+x.w,0)||1;return+(tx.reduce((a,x)=>a+x.ap*x.w,0)/tw).toFixed(1)});
-    mkCh('c-block','bar',{labels:blocks,datasets:[
-      {label:'KH',data:bpp,backgroundColor:'rgba(55,138,221,.7)',borderRadius:4},
-      {label:'TT',data:bap,backgroundColor:'rgba(99,153,34,.8)',borderRadius:4}
-    ]},{scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}});
-  }
-
-  const open=r.filter(x=>x.status==='MO').length;
-  const dong=r.filter(x=>x.status==='DONG').length;
-  const qh=r.filter(x=>x.status==='QUA_HAN').length;
-  mkCh('c-rfi','doughnut',{labels:['Đã đóng','Đang mở','Quá hạn'],datasets:[{data:[dong,open,qh],backgroundColor:['#639922','#ba7517','#e24b4a'],borderWidth:0}]},{cutout:'62%'});
-  const tot=dong+open+qh||1;
-  document.getElementById('rfi-leg').innerHTML=
-    `<span class="leg"><span class="leg-sq" style="background:#639922"></span>Đã đóng ${dong} (${Math.round(dong/tot*100)}%)</span>`+
-    `<span class="leg"><span class="leg-sq" style="background:#ba7517"></span>Đang mở ${open}</span>`+
-    `<span class="leg"><span class="leg-sq" style="background:#e24b4a"></span>Quá hạn ${qh}</span>`;
-
-  renderSdPieChart(s);
-}
-
-function renderSdPieChart(sds){
-  const ctx=document.getElementById('c-sd-pie');if(!ctx)return;
-  if(CHS['c-sd-pie'])CHS['c-sd-pie'].destroy();
-  const duyet=sds.filter(x=>x.status==='DA_DUYET').length;
-  const reject=sds.filter(x=>x.status==='REJECT').length;
-  const cho=sds.filter(x=>x.status==='CHO_DUYET').length;
-  const chua=sds.filter(x=>x.status==='CHUA_NOP').length;
-  const tot=duyet+reject+cho+chua||1;
-  const colors=['#639922','#e24b4a','#ba7517','#9c9a92'];
-  const labels=['Đã duyệt','Bị từ chối','Chờ duyệt','Chưa nộp'];
-  const data=[duyet,reject,cho,chua];
-  CHS['c-sd-pie']=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/tot*100)}%)`}}}}});
-  document.getElementById('sd-pie-leg').innerHTML=labels.map((l,i)=>`<span class="leg"><span class="leg-sq" style="background:${colors[i]}"></span>${l} ${data[i]} (${Math.round(data[i]/tot*100)}%)</span>`).join('');
-  document.getElementById('sd-pie-sub').textContent=[fBlock||'Tất cả phân khu',fFloor||'Tất cả tầng',fCat||'Tất cả hạng mục'].join(' — ');
-  const cardData=[
-    {label:'Đã duyệt (Approved)',count:duyet,pct:Math.round(duyet/tot*100),cls:'b-duyet'},
-    {label:'Bị từ chối (Rejected)',count:reject,pct:Math.round(reject/tot*100),cls:'b-reject'},
-    {label:'Chờ duyệt (Pending)',count:cho,pct:Math.round(cho/tot*100),cls:'b-cho'},
-    {label:'Chưa nộp',count:chua,pct:Math.round(chua/tot*100),cls:'b-chuanop'}
-  ];
-  document.getElementById('sd-status-cards').innerHTML=cardData.map(c=>
-    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)"><span style="font-size:12px"><span class="badge ${c.cls}">${c.label}</span></span><span style="font-size:15px;font-weight:600">${c.count} <span style="font-size:11px;color:var(--tx2)">(${c.pct}%)</span></span></div>`
-  ).join('')+`<div style="margin-top:4px;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd);display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:600">Tổng</span><span style="font-size:15px;font-weight:600">${duyet+reject+cho+chua}</span></div>`;
+  mkCh('c-td','line',{labels:['T1','T2','T3','T4','T5','T6','T7'],datasets:[{label:'KH',data:[15,28,42,55,65,75,85],borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,.08)',fill:true,tension:.4,pointRadius:3},{label:'TT',data:[12,24,38,52,60,68,Math.min(100,ap2)],borderColor:'#3b6d11',backgroundColor:'rgba(59,109,17,.08)',fill:true,tension:.4,pointRadius:3}]},{scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}});
+  const bl=CFG.blocks.filter(b=>t.some(x=>x.block===b));
+  if(bl.length){const bpp=bl.map(b=>{const tx=t.filter(x=>x.block===b);const tw=tx.reduce((a,x)=>a+x.w,0)||1;return+(tx.reduce((a,x)=>a+x.pp*x.w,0)/tw).toFixed(1)});const bap=bl.map(b=>{const tx=t.filter(x=>x.block===b);const tw=tx.reduce((a,x)=>a+x.w,0)||1;return+(tx.reduce((a,x)=>a+x.ap*x.w,0)/tw).toFixed(1)});mkCh('c-block','bar',{labels:bl,datasets:[{label:'KH',data:bpp,backgroundColor:'rgba(55,138,221,.7)',borderRadius:4},{label:'TT',data:bap,backgroundColor:'rgba(99,153,34,.8)',borderRadius:4}]},{scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}})}
+  const op=r.filter(x=>x.status==='MO').length,dn=r.filter(x=>x.status==='DONG').length,qh=r.filter(x=>x.status==='QUA_HAN').length;
+  mkCh('c-rfi','doughnut',{labels:['Đã đóng','Đang mở','Quá hạn'],datasets:[{data:[dn,op,qh],backgroundColor:['#639922','#ba7517','#e24b4a'],borderWidth:0}]},{cutout:'62%'});
+  const tot=dn+op+qh||1;document.getElementById('rfi-leg').innerHTML=`<span class="leg"><span class="leg-sq" style="background:#639922"></span>Đóng ${dn}(${Math.round(dn/tot*100)}%)</span><span class="leg"><span class="leg-sq" style="background:#ba7517"></span>Mở ${op}</span><span class="leg"><span class="leg-sq" style="background:#e24b4a"></span>Quá hạn ${qh}</span>`;
+  // SD pie
+  const ctx=document.getElementById('c-sd-pie');if(!ctx)return;if(CHS['c-sd-pie'])CHS['c-sd-pie'].destroy();
+  const du=s.filter(x=>x.status==='DA_DUYET').length,rj=s.filter(x=>x.status==='REJECT').length,ch=s.filter(x=>x.status==='CHO_DUYET').length,cn=s.filter(x=>x.status==='CHUA_NOP').length,st=du+rj+ch+cn||1;
+  const cl=['#639922','#e24b4a','#ba7517','#9c9a92'],lb=['Đã duyệt','Từ chối','Chờ duyệt','Chưa nộp'],dt=[du,rj,ch,cn];
+  CHS['c-sd-pie']=new Chart(ctx,{type:'doughnut',data:{labels:lb,datasets:[{data:dt,backgroundColor:cl,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/st*100)}%)`}}}}});
+  document.getElementById('sd-pie-leg').innerHTML=lb.map((l,i)=>`<span class="leg"><span class="leg-sq" style="background:${cl[i]}"></span>${l} ${dt[i]}(${Math.round(dt[i]/st*100)}%)</span>`).join('');
+  document.getElementById('sd-pie-sub').textContent=[fBlock||'Tất cả PK',fFloor||'Tất cả tầng',fCat||'Tất cả HM'].join(' — ');
+  const cd=[{l:'Đã duyệt',c:du,p:Math.round(du/st*100),s:'b-duyet'},{l:'Từ chối',c:rj,p:Math.round(rj/st*100),s:'b-reject'},{l:'Chờ duyệt',c:ch,p:Math.round(ch/st*100),s:'b-cho'},{l:'Chưa nộp',c:cn,p:Math.round(cn/st*100),s:'b-chuanop'}];
+  document.getElementById('sd-status-cards').innerHTML=cd.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)"><span class="badge ${c.s}">${c.l}</span><span style="font-size:15px;font-weight:600">${c.c} <span style="font-size:11px;color:var(--tx2)">(${c.p}%)</span></span></div>`).join('')+`<div style="margin-top:4px;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd);display:flex;justify-content:space-between"><span style="font-weight:600">Tổng</span><span style="font-size:15px;font-weight:600">${du+rj+ch+cn}</span></div>`;
 }
 
 // ==================== TABLES ====================
-const ST_LB={DONE:'Hoàn thành',TRE:'Trễ tiến độ',DANG:'Đang thi công',CBA:'Chưa bắt đầu'};
-const ST_CLS={DONE:'b-done',TRE:'b-tre',DANG:'b-dang',CBA:'b-chuabatdau'};
-const SD_LB={DA_DUYET:'Đã duyệt',CHO_DUYET:'Chờ duyệt',REJECT:'Bị từ chối',CHUA_NOP:'Chưa nộp'};
-const SD_CLS={DA_DUYET:'b-duyet',CHO_DUYET:'b-cho',REJECT:'b-reject',CHUA_NOP:'b-chuanop'};
-const RI_LB={DONG:'Đã đóng',MO:'Đang mở',QUA_HAN:'Quá hạn'};
-const RI_CLS={DONG:'b-dong',MO:'b-dang',QUA_HAN:'b-quahan'};
-const IMP_LB={NGHIEM_TRONG:'Nghiêm trọng',TRUNG_BINH:'Trung bình',THAP:'Thấp'};
-const IMP_CLS={NGHIEM_TRONG:'b-critical',TRUNG_BINH:'b-major',THAP:'b-minor'};
+const ST_LB={DONE:'Hoàn thành',TRE:'Trễ',DANG:'Đang TC',CBA:'Chưa BĐ'},ST_CLS={DONE:'b-done',TRE:'b-tre',DANG:'b-dang',CBA:'b-chuabatdau'};
+const SD_LB={DA_DUYET:'Đã duyệt',CHO_DUYET:'Chờ duyệt',REJECT:'Từ chối',CHUA_NOP:'Chưa nộp'},SD_CLS={DA_DUYET:'b-duyet',CHO_DUYET:'b-cho',REJECT:'b-reject',CHUA_NOP:'b-chuanop'};
+const RI_LB={DONG:'Đã đóng',MO:'Đang mở',QUA_HAN:'Quá hạn'},RI_CLS={DONG:'b-dong',MO:'b-dang',QUA_HAN:'b-quahan'};
+const IMP_LB={NGHIEM_TRONG:'Nghiêm trọng',TRUNG_BINH:'Trung bình',THAP:'Thấp'},IMP_CLS={NGHIEM_TRONG:'b-critical',TRUNG_BINH:'b-major',THAP:'b-minor'};
 
-function renderTdTable(tasks,srch=''){
-  let list=tasks||[];
-  if(srch)list=list.filter(t=>(t.name+t.id).toLowerCase().includes(srch.toLowerCase()));
-  document.getElementById('td-body').innerHTML=list.map(t=>{
-    const st=getStatus(t),delay=getDelay(t);
-    return`<tr>
-      <td style="font-size:11px;font-family:monospace">${t.id}</td>
-      <td>${t.cp?'<span class="cp-dot"></span>':''}${t.name.length>28?t.name.slice(0,27)+'…':t.name}</td>
-      <td>${t.block}</td><td>${t.floor}</td><td>${t.cat}</td>
-      <td style="text-align:right">${t.pp}%</td><td style="text-align:right">${t.ap}%</td>
-      <td><div class="pb-wrap"><div class="pb-bg"><div class="pb-plan" style="width:${t.pp}%"><div class="pb-act" style="width:${t.ap>0?Math.min(100,t.ap/Math.max(t.pp,.1)*100):0}%;background:${t.ap>=t.pp?'#639922':'#e24b4a'}"></div></div></div></div></td>
-      <td style="color:${delay>0?'var(--red)':'var(--tx2)'}">${delay>0?'+'+delay+'ng':'—'}</td>
-      <td><span class="badge ${ST_CLS[st]}">${ST_LB[st]}</span></td>
-      <td style="text-align:center">${t.cp?'<span style="color:var(--red);font-size:11px;font-weight:600">CP</span>':'—'}</td>
-    </tr>`}).join('')||`<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>`;
-}
+function renderTdTable(ts,q=''){let l=ts||[];if(q)l=l.filter(t=>(t.name+t.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit();
+document.getElementById('td-body').innerHTML=l.map(t=>{const st=getStatus(t),dl=getDelay(t);return`<tr><td style="font-size:11px;font-family:monospace">${t.id}</td><td>${t.cp?'<span class="cp-dot"></span>':''}${t.name.length>26?t.name.slice(0,25)+'…':t.name}</td><td>${t.block}</td><td>${t.floor}</td><td>${t.cat}</td><td style="text-align:right">${t.pp}%</td><td style="text-align:right">${t.ap}%</td><td><div class="pb-wrap"><div class="pb-bg"><div class="pb-plan" style="width:${t.pp}%"><div class="pb-act" style="width:${t.ap>0?Math.min(100,t.ap/Math.max(t.pp,.1)*100):0}%;background:${t.ap>=t.pp?'#639922':'#e24b4a'}"></div></div></div></div></td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td><span class="badge ${ST_CLS[st]}">${ST_LB[st]}</span></td><td>${t.cp?'<span style="color:var(--red);font-weight:600;font-size:11px">CP</span>':'—'}</td></tr>`}).join('')||'<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>'}
 
-function renderSdTable(sds,srch=''){
-  let list=sds||[];
-  if(srch)list=list.filter(s=>(s.name+s.id).toLowerCase().includes(srch.toLowerCase()));
-  document.getElementById('sd-body').innerHTML=list.map(s=>{
-    let delay=0;
-    if(s.status==='DA_DUYET'&&s.aa&&s.pa)delay=Math.max(0,dDiff(s.pa,s.aa));
-    else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)delay=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));
-    return`<tr>
-      <td style="font-size:11px;font-family:monospace">${s.id}</td>
-      <td>${s.name.length>24?s.name.slice(0,23)+'…':s.name}</td>
-      <td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td>
-      <td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td>
-      <td style="color:${delay>0?'var(--red)':'var(--tx2)'}">${delay>0?'+'+delay+'ng':'—'}</td>
-      <td style="text-align:center">${s.rev}</td>
-      <td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td>
-    </tr>`}).join('')||`<tr><td colspan="12" class="no-data">Không có dữ liệu</td></tr>`;
-}
+function renderSdTable(ss,q=''){let l=ss||[];if(q)l=l.filter(s=>(s.name+s.id).toLowerCase().includes(q.toLowerCase()));
+document.getElementById('sd-body').innerHTML=l.map(s=>{let dl=0;if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));return`<tr><td style="font-size:11px;font-family:monospace">${s.id}</td><td>${s.name.length>22?s.name.slice(0,21)+'…':s.name}</td><td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td><td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td style="text-align:center">${s.rev}</td><td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td></tr>`}).join('')||'<tr><td colspan="12" class="no-data">Không có dữ liệu</td></tr>'}
 
-function renderRfiTable(rfis,srch=''){
-  let list=rfis||[];
-  if(srch)list=list.filter(r=>(r.subject+r.id).toLowerCase().includes(srch.toLowerCase()));
-  document.getElementById('rfi-body').innerHTML=list.map(r=>`<tr>
-    <td style="font-size:11px;font-family:monospace">${r.id}</td>
-    <td title="${r.subject}">${r.subject.length>32?r.subject.slice(0,31)+'…':r.subject}</td>
-    <td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td>
-    <td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td>
-    <td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td>
-    <td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td>
-  </tr>`).join('')||`<tr><td colspan="10" class="no-data">Không có dữ liệu</td></tr>`;
-}
+function renderRfiTable(rs,q=''){let l=rs||[];if(q)l=l.filter(r=>(r.subject+r.id).toLowerCase().includes(q.toLowerCase()));
+document.getElementById('rfi-body').innerHTML=l.map(r=>`<tr><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td></tr>`).join('')||'<tr><td colspan="10" class="no-data">Không có dữ liệu</td></tr>'}
+
+// ==================== CRUD ====================
+async function saveTd(){if(!canEdit())return;const id=gv('ti-id'),name=gv('ti-name'),block=gv('ti-block'),floor=gv('ti-floor'),cat=gv('ti-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
+const d={MA_CV:id,TEN_CV:name,PHAN_KHU:block,TANG:floor,HANG_MUC:cat,KH_BAT_DAU:gv('ti-ps'),KH_KET_THUC:gv('ti-pe'),TT_BAT_DAU:gv('ti-as'),TT_KET_THUC:gv('ti-ae'),KH_PHAN_TRAM:gv('ti-pp')||'0',TT_PHAN_TRAM:gv('ti-ap')||'0',TRONG_SO:gv('ti-w')||'0.05',DUONG_GANG:gv('ti-cp')};
+const eid=gv('td-eid');await apiWrite(eid?'edit_task':'add_task',d);resetTdForm()}
+
+async function saveSd(){if(!canEdit())return;const id=gv('si-id'),name=gv('si-name'),block=gv('si-block'),floor=gv('si-floor'),cat=gv('si-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
+const d={MA_SD:id,TEN_BAN_VE:name,MA_CV_LIEN_KET:gv('si-tid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,KH_NGAY_NOP:gv('si-ps'),TT_NGAY_NOP:gv('si-as'),KH_NGAY_DUYET:gv('si-pa'),TT_NGAY_DUYET:gv('si-aa'),LAN_SUA:gv('si-rev')||'0',TRANG_THAI:gv('si-status')};
+const eid=gv('sd-eid');await apiWrite(eid?'edit_sd':'add_sd',d);resetSdForm()}
+
+async function saveRfi(){if(!canEdit())return;const id=gv('ri-id'),sub=gv('ri-sub'),block=gv('ri-block'),floor=gv('ri-floor'),cat=gv('ri-cat');if(!id||!sub||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
+const d={MA_RFI:id,NOI_DUNG:sub,MA_CV_LIEN_KET:gv('ri-tid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,NGAY_PHAT_SINH:gv('ri-rd'),HAN_PHAN_HOI:gv('ri-rqd'),NGAY_DA_PHAN_HOI:gv('ri-rpd'),MUC_DO:gv('ri-imp'),TRANG_THAI:gv('ri-status')};
+const eid=gv('rfi-eid');await apiWrite(eid?'edit_rfi':'add_rfi',d);resetRfiForm()}
+
+function editTd(id){if(!canEdit())return;const t=TASKS.find(x=>x.id===id);if(!t)return;setv('ti-id',t.id);setv('ti-name',t.name);setv('ti-block',t.block);setv('ti-floor',t.floor);setv('ti-cat',t.cat);setv('ti-ps',t.ps);setv('ti-pe',t.pe);setv('ti-as',t.as);setv('ti-ae',t.ae);setv('ti-pp',t.pp);setv('ti-ap',t.ap);setv('ti-w',t.w);setv('ti-cp',t.cp?'TRUE':'FALSE');setv('td-eid',t.id);document.getElementById('td-form-title').textContent='Sửa công việc';goPage('nl',document.getElementById('tab-nl'));goSub('s-td',document.querySelector('.sub-tab'))}
+function editSd(id){if(!canEdit())return;const s=SDS.find(x=>x.id===id);if(!s)return;setv('si-id',s.id);setv('si-name',s.name);setv('si-tid',s.tid);setv('si-block',s.block);setv('si-floor',s.floor);setv('si-cat',s.cat);setv('si-ps',s.ps);setv('si-as',s.as);setv('si-pa',s.pa);setv('si-aa',s.aa);setv('si-rev',s.rev);setv('si-status',s.status);setv('sd-eid',s.id);document.getElementById('sd-form-title').textContent='Sửa SD';goPage('nl',document.getElementById('tab-nl'));goSub('s-sd',document.querySelectorAll('.sub-tab')[1])}
+function editRfi(id){if(!canEdit())return;const r=RFIS.find(x=>x.id===id);if(!r)return;setv('ri-id',r.id);setv('ri-sub',r.subject);setv('ri-tid',r.tid);setv('ri-block',r.block);setv('ri-floor',r.floor);setv('ri-cat',r.cat);setv('ri-rd',r.rd);setv('ri-rqd',r.rqd);setv('ri-rpd',r.rpd);setv('ri-imp',r.imp);setv('ri-status',r.status);setv('rfi-eid',r.id);document.getElementById('rfi-form-title').textContent='Sửa RFI';goPage('nl',document.getElementById('tab-nl'));goSub('s-rfi',document.querySelectorAll('.sub-tab')[2])}
+
+async function delTd(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_task',{id})}
+async function delSd(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_sd',{id})}
+async function delRfi(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_rfi',{id})}
+
+function resetTdForm(){['ti-id','ti-name','ti-ps','ti-pe','ti-as','ti-ae','ti-pp','ti-ap','ti-w','td-eid'].forEach(id=>setv(id,''));setv('ti-block','');setv('ti-floor','');setv('ti-cat','');setv('ti-cp','FALSE');document.getElementById('td-form-title').textContent='Thêm công việc mới'}
+function resetSdForm(){['si-id','si-name','si-tid','si-ps','si-as','si-pa','si-aa','si-rev','sd-eid'].forEach(id=>setv(id,''));setv('si-block','');setv('si-floor','');setv('si-cat','');setv('si-status','CHUA_NOP');document.getElementById('sd-form-title').textContent='Thêm SD mới'}
+function resetRfiForm(){['ri-id','ri-sub','ri-tid','ri-rd','ri-rqd','ri-rpd','rfi-eid'].forEach(id=>setv(id,''));setv('ri-block','');setv('ri-floor','');setv('ri-cat','');setv('ri-imp','TRUNG_BINH');setv('ri-status','MO');document.getElementById('rfi-form-title').textContent='Thêm RFI mới'}
 
 // ==================== NAV ====================
-function goPage(page,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  if(btn)btn.classList.add('active');
-}
-
-function applyF(){
-  fBlock=document.getElementById('f-block').value;
-  fFloor=document.getElementById('f-floor').value;
-  fCat=document.getElementById('f-cat').value;
-  render();
-}
-
-function render(){
-  const{t,s,r}=getFlt();
-  const kpi=calcKPI(t,s,r);
-  renderKPI(kpi);renderAlert(kpi);renderCharts(t,s,r);
-  renderTdTable(t);renderSdTable(s);renderRfiTable(r);
-}
+function goPage(p,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-bar .tab').forEach(x=>{if(!x.classList.contains('cfg-tab'))x.classList.remove('active')});document.getElementById('page-'+p).classList.add('active');if(b)b.classList.add('active');document.getElementById('filter-bar').style.display=p==='nl'?'none':'flex'}
+function goSub(s,b){document.querySelectorAll('.sub-pg').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));document.getElementById(s).classList.add('active');if(b)b.classList.add('active')}
+function applyF(){fBlock=document.getElementById('f-block').value;fFloor=document.getElementById('f-floor').value;fCat=document.getElementById('f-cat').value;render()}
+function render(){const{t,s,r}=getFlt();const k=calcKPI(t,s,r);renderKPI(k);renderAlert(k);renderCharts(t,s,r);renderTdTable(t);renderSdTable(s);renderRfiTable(r)}
 </script>
 </body>
 </html>
