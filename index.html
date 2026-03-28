@@ -94,10 +94,11 @@ tr:hover td{background:var(--bg2)}
     <p>Dashboard sẽ đọc dữ liệu trực tiếp từ Google Sheets của bạn. Mọi thay đổi trên Google Sheets sẽ tự động cập nhật trên dashboard.</p>
     <div class="setup-steps">
       <b>Bước 1:</b> Import file <code>wealthcons_dashboard_template.xlsx</code> lên Google Sheets<br>
-      <b>Bước 2:</b> Vào <b>File → Share → Publish to web</b> → chọn <b>Entire Document</b> → nhấn <b>Publish</b><br>
-      <b>Bước 3:</b> Copy <b>Spreadsheet ID</b> từ URL:<br>
-      <code>https://docs.google.com/spreadsheets/d/<span style="color:var(--red);font-weight:700">SPREADSHEET_ID</span>/edit</code><br>
-      <b>Bước 4:</b> Dán ID vào ô bên dưới và nhấn Kết nối
+      <b>Bước 2:</b> Nhấn nút <b>Share</b> (góc phải trên) → chọn <b>"Anyone with the link"</b> → quyền <b>Viewer</b> → nhấn <b>Done</b><br>
+      <b>Bước 3:</b> Vào <b>File → Share → Publish to web</b> → chọn <b>Entire Document</b> → nhấn <b>Publish</b><br>
+      <b>Bước 4:</b> Copy <b>Spreadsheet ID</b> từ URL trên thanh địa chỉ:<br>
+      <code style="font-size:11px">https://docs.google.com/spreadsheets/d/<span style="color:var(--red);font-weight:700">SPREADSHEET_ID</span>/edit</code><br>
+      <b>Bước 5:</b> Dán ID vào ô bên dưới và nhấn Kết nối
     </div>
     <input type="text" id="setup-id" placeholder="Dán Spreadsheet ID vào đây..." autocomplete="off">
     <div class="setup-err" id="setup-err">Không thể kết nối. Kiểm tra lại ID và đảm bảo đã Publish to web.</div>
@@ -222,28 +223,60 @@ let pollTimer=null;
 let isDemo=false;
 
 // ==================== GOOGLE SHEETS FETCH ====================
+// Map sheet names to gid (sheet index)
+// Default Google Sheets gids: first sheet=0, then incremental
+// We'll detect gids dynamically or use sheet name export
 function sheetCSVUrl(sheetName){
+  // Use the pub export endpoint — more reliable for CORS
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+
+function sheetCSVUrlAlt(sheetName){
+  // Fallback: gviz endpoint
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 }
 
+function sheetPubUrl(sheetName){
+  // Fallback 2: pub endpoint via pubhtml converted to csv
+  return `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+
 async function fetchSheet(sheetName){
-  const url=sheetCSVUrl(sheetName);
-  const resp=await fetch(url);
-  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const text=await resp.text();
-  const result=Papa.parse(text,{header:true,skipEmptyLines:true});
-  return result.data;
+  // Try multiple endpoints
+  const urls=[
+    sheetCSVUrl(sheetName),
+    sheetCSVUrlAlt(sheetName)
+  ];
+  let lastErr=null;
+  for(const url of urls){
+    try{
+      const resp=await fetch(url,{redirect:'follow'});
+      if(!resp.ok){lastErr=new Error(`HTTP ${resp.status} from ${url}`);continue}
+      const ct=resp.headers.get('content-type')||'';
+      const text=await resp.text();
+      // Check if we got HTML error page instead of CSV
+      if(text.trim().startsWith('<!DOCTYPE')||text.trim().startsWith('<html')){
+        lastErr=new Error('Got HTML instead of CSV — sheet might not be published');
+        continue;
+      }
+      const result=Papa.parse(text,{header:true,skipEmptyLines:true});
+      if(result.data&&result.data.length>0)return result.data;
+      // If parsed but empty, might be wrong sheet name
+      lastErr=new Error('Parsed CSV but no data rows for sheet: '+sheetName);
+    }catch(e){lastErr=e}
+  }
+  throw lastErr||new Error('All fetch attempts failed for sheet: '+sheetName);
 }
 
 async function fetchAllData(){
   setSyncStatus('syncing','Đang tải...');
   try{
-    const [cfgRows,taskRows,sdRows,rfiRows]=await Promise.all([
-      fetchSheet('CONFIG'),
-      fetchSheet('TASKS'),
-      fetchSheet('SD'),
-      fetchSheet('RFI')
-    ]);
+    // Fetch each sheet individually to identify which fails
+    let cfgRows,taskRows,sdRows,rfiRows;
+    try{cfgRows=await fetchSheet('CONFIG')}catch(e){console.error('CONFIG fetch failed:',e);cfgRows=[]}
+    try{taskRows=await fetchSheet('TASKS')}catch(e){console.error('TASKS fetch failed:',e);throw new Error('Không đọc được sheet TASKS: '+e.message)}
+    try{sdRows=await fetchSheet('SD')}catch(e){console.error('SD fetch failed:',e);throw new Error('Không đọc được sheet SD: '+e.message)}
+    try{rfiRows=await fetchSheet('RFI')}catch(e){console.error('RFI fetch failed:',e);throw new Error('Không đọc được sheet RFI: '+e.message)}
     parseCfg(cfgRows);
     parseTasks(taskRows);
     parseSDs(sdRows);
@@ -255,7 +288,7 @@ async function fetchAllData(){
     return true;
   }catch(e){
     console.error('Fetch error:',e);
-    setSyncStatus('err','Lỗi kết nối');
+    setSyncStatus('err','Lỗi: '+e.message);
     return false;
   }
 }
@@ -376,7 +409,7 @@ async function connectSheet(){
     document.getElementById('info-bar').style.display='none';
     startPolling();
   }else{
-    document.getElementById('setup-err').textContent='Không thể kết nối. Kiểm tra lại ID và đảm bảo đã Publish to web.';
+    document.getElementById('setup-err').textContent='Không thể kết nối. Kiểm tra: (1) ID đúng chưa, (2) Đã Publish to web chưa, (3) Tên các sheet tab phải đúng: CONFIG, TASKS, SD, RFI';
     document.getElementById('setup-err').style.display='block';
   }
   document.getElementById('btn-connect').textContent='Kết nối';
