@@ -113,22 +113,16 @@ tr:hover td{background:var(--bg2)}
 </head>
 <body>
 
-<!-- SETUP DIALOG -->
+<!-- LOGIN DIALOG -->
 <div class="overlay" id="setup-overlay">
-<div class="dialog">
-  <h2>Wealthcons — Kết nối Dashboard</h2>
-  <p>Nhập URL của Google Apps Script đã deploy.</p>
-  <div class="dialog-steps">
-    <b>Bước 1:</b> Mở Google Sheets → Extensions → Apps Script<br>
-    <b>Bước 2:</b> Dán code từ file <code>Code.gs</code> → Lưu<br>
-    <b>Bước 3:</b> Deploy → New deployment → Web app → Execute as: Me, Access: Anyone → Deploy<br>
-    <b>Bước 4:</b> Copy URL web app → dán vào ô bên dưới
-  </div>
-  <input type="text" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec">
-  <input type="password" id="setup-pw" placeholder="Mật khẩu (bỏ trống = Viewer)">
+<div class="dialog" style="max-width:380px">
+  <h2>Wealthcons Dashboard</h2>
+  <p>Nhập mật khẩu để đăng nhập, hoặc bỏ trống để xem.</p>
+  <input type="password" id="setup-pw" placeholder="Mật khẩu (bỏ trống = chỉ xem)" onkeydown="if(event.key==='Enter')doConnect()">
   <div class="dialog-err" id="setup-err"></div>
   <div style="display:flex;gap:8px">
-    <button class="btn pri" onclick="doConnect()" id="btn-connect">Kết nối</button>
+    <button class="btn pri" onclick="doConnect()" id="btn-connect">Đăng nhập</button>
+    <button class="btn" onclick="doConnect()">Xem không cần mật khẩu</button>
   </div>
 </div>
 </div>
@@ -189,7 +183,7 @@ tr:hover td{background:var(--bg2)}
 <!-- TIẾN ĐỘ -->
 <div id="page-td" class="page">
   <div class="tbl-action"><span class="sec-title">Danh sách công việc</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderTdTable(getFlt().t,this.value)"></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Mã CV</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH%</th><th>TT%</th><th>Tiến độ</th><th>Trễ</th><th>TT</th><th>CP</th></tr></thead><tbody id="td-body"></tbody></table></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã CV</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH%</th><th>TT%</th><th>Tiến độ</th><th>Trễ</th><th>TT</th><th>CP</th><th id="th-td-act">Thao tác</th></tr></thead><tbody id="td-body"></tbody></table></div>
 </div>
 
 <!-- SHOPDRAWING -->
@@ -199,13 +193,13 @@ tr:hover td{background:var(--bg2)}
     <div class="chart-box"><div class="chart-title">Số lượng theo trạng thái</div><div class="chart-sub">Chi tiết</div><div id="sd-status-cards" style="display:flex;flex-direction:column;gap:8px;padding:10px 0"></div></div>
   </div>
   <div class="tbl-action"><span class="sec-title">Theo dõi Shopdrawing</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderSdTable(getFlt().s,this.value)"></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Mã SD</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>TT</th></tr></thead><tbody id="sd-body"></tbody></table></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã SD</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>TT</th><th id="th-sd-act">Thao tác</th></tr></thead><tbody id="sd-body"></tbody></table></div>
 </div>
 
 <!-- RFI -->
 <div id="page-rfi" class="page">
   <div class="tbl-action"><span class="sec-title">Theo dõi RFI</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderRfiTable(getFlt().r,this.value)"></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Nội dung</th><th>PK</th><th>Tầng</th><th>HM</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>TT</th></tr></thead><tbody id="rfi-body"></tbody></table></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Nội dung</th><th>PK</th><th>Tầng</th><th>HM</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>TT</th><th id="th-rfi-act">Thao tác</th></tr></thead><tbody id="rfi-body"></tbody></table></div>
 </div>
 
 <!-- NHẬP LIỆU -->
@@ -286,7 +280,7 @@ tr:hover td{background:var(--bg2)}
 
 <script>
 const TODAY=new Date();
-let API_URL='',ROLE='viewer',PW='';
+let API_URL='https://script.google.com/macros/s/AKfycbzGTNGZyoJ16dIST9gmjJI_GvfDjsjGG9kgoVpQoCjw5Y_MT5dCCX1p1zf0Q3Enq-o/exec',ROLE='viewer',PW='';
 let CFG={projName:'',blocks:[],floors:[],cats:[]};
 let TASKS=[],SDS=[],RFIS=[];
 let fBlock='',fFloor='',fCat='';
@@ -317,17 +311,14 @@ async function apiWrite(action,data){
 
 // ==================== CONNECT ====================
 async function doConnect(){
-  const url=document.getElementById('setup-url').value.trim();
   const pw=document.getElementById('setup-pw').value.trim();
-  if(!url){showErr('Nhập URL Apps Script');return}
   document.getElementById('btn-connect').disabled=true;
   document.getElementById('btn-connect').textContent='Đang kết nối...';
-  API_URL=url;PW=pw;
+  PW=pw;
   try{
     const r=await api({action:'check_role'});
-    if(!r.ok){showErr(r.error||'Sai mật khẩu');document.getElementById('btn-connect').disabled=false;document.getElementById('btn-connect').textContent='Kết nối';return}
+    if(!r.ok){showErr(r.error||'Sai mật khẩu');document.getElementById('btn-connect').disabled=false;document.getElementById('btn-connect').textContent='Đăng nhập';return}
     ROLE=r.role;
-    localStorage.setItem('wc_api_url',url);
     localStorage.setItem('wc_pw',pw);
     document.getElementById('setup-overlay').style.display='none';
     document.getElementById('main-dash').style.display='block';
@@ -335,15 +326,16 @@ async function doConnect(){
     await refreshData();
     startPolling();
   }catch(e){
-    showErr('Không kết nối được: '+e.message);
+    showErr('Không kết nối được. Kiểm tra lại Apps Script deployment.');
   }
   document.getElementById('btn-connect').disabled=false;
-  document.getElementById('btn-connect').textContent='Kết nối';
+  document.getElementById('btn-connect').textContent='Đăng nhập';
 }
 
 function doDisconnect(){
   if(pollTimer)clearInterval(pollTimer);
-  localStorage.removeItem('wc_api_url');localStorage.removeItem('wc_pw');
+  localStorage.removeItem('wc_pw');
+  PW='';ROLE='viewer';
   document.getElementById('setup-overlay').style.display='flex';
   document.getElementById('main-dash').style.display='none';
   document.getElementById('setup-pw').value='';
@@ -369,12 +361,9 @@ function startPolling(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInter
 
 // ==================== AUTO-RECONNECT ====================
 (function(){
-  const url=localStorage.getItem('wc_api_url');
   const pw=localStorage.getItem('wc_pw');
-  if(url){
-    document.getElementById('setup-url').value=url;
-    document.getElementById('setup-pw').value=pw||'';
-    API_URL=url;PW=pw||'';
+  if(pw!==null){
+    PW=pw;
     api({action:'check_role'}).then(r=>{
       if(r.ok){ROLE=r.role;document.getElementById('setup-overlay').style.display='none';document.getElementById('main-dash').style.display='block';applyRole();refreshData();startPolling()}
     }).catch(()=>{});
@@ -491,14 +480,14 @@ const SD_LB={DA_DUYET:'Đã duyệt',CHO_DUYET:'Chờ duyệt',REJECT:'Từ ch�
 const RI_LB={DONG:'Đã đóng',MO:'Đang mở',QUA_HAN:'Quá hạn'},RI_CLS={DONG:'b-dong',MO:'b-dang',QUA_HAN:'b-quahan'};
 const IMP_LB={NGHIEM_TRONG:'Nghiêm trọng',TRUNG_BINH:'Trung bình',THAP:'Thấp'},IMP_CLS={NGHIEM_TRONG:'b-critical',TRUNG_BINH:'b-major',THAP:'b-minor'};
 
-function renderTdTable(ts,q=''){let l=ts||[];if(q)l=l.filter(t=>(t.name+t.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit();
-document.getElementById('td-body').innerHTML=l.map(t=>{const st=getStatus(t),dl=getDelay(t);return`<tr><td style="font-size:11px;font-family:monospace">${t.id}</td><td>${t.cp?'<span class="cp-dot"></span>':''}${t.name.length>26?t.name.slice(0,25)+'…':t.name}</td><td>${t.block}</td><td>${t.floor}</td><td>${t.cat}</td><td style="text-align:right">${t.pp}%</td><td style="text-align:right">${t.ap}%</td><td><div class="pb-wrap"><div class="pb-bg"><div class="pb-plan" style="width:${t.pp}%"><div class="pb-act" style="width:${t.ap>0?Math.min(100,t.ap/Math.max(t.pp,.1)*100):0}%;background:${t.ap>=t.pp?'#639922':'#e24b4a'}"></div></div></div></div></td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td><span class="badge ${ST_CLS[st]}">${ST_LB[st]}</span></td><td>${t.cp?'<span style="color:var(--red);font-weight:600;font-size:11px">CP</span>':'—'}</td></tr>`}).join('')||'<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>'}
+function renderTdTable(ts,q=''){let l=ts||[];if(q)l=l.filter(t=>(t.name+t.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
+document.getElementById('td-body').innerHTML=l.map(t=>{const st=getStatus(t),dl=getDelay(t);return`<tr><td style="font-size:11px;font-family:monospace">${t.id}</td><td>${t.cp?'<span class="cp-dot"></span>':''}${t.name.length>26?t.name.slice(0,25)+'…':t.name}</td><td>${t.block}</td><td>${t.floor}</td><td>${t.cat}</td><td style="text-align:right">${t.pp}%</td><td style="text-align:right">${t.ap}%</td><td><div class="pb-wrap"><div class="pb-bg"><div class="pb-plan" style="width:${t.pp}%"><div class="pb-act" style="width:${t.ap>0?Math.min(100,t.ap/Math.max(t.pp,.1)*100):0}%;background:${t.ap>=t.pp?'#639922':'#e24b4a'}"></div></div></div></div></td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td><span class="badge ${ST_CLS[st]}">${ST_LB[st]}</span></td><td>${t.cp?'<span style="color:var(--red);font-weight:600;font-size:11px">CP</span>':'—'}</td><td>${e?`<button class="btn sm" onclick="editTd('${t.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delTd('${t.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="12" class="no-data">Không có dữ liệu</td></tr>'}
 
-function renderSdTable(ss,q=''){let l=ss||[];if(q)l=l.filter(s=>(s.name+s.id).toLowerCase().includes(q.toLowerCase()));
-document.getElementById('sd-body').innerHTML=l.map(s=>{let dl=0;if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));return`<tr><td style="font-size:11px;font-family:monospace">${s.id}</td><td>${s.name.length>22?s.name.slice(0,21)+'…':s.name}</td><td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td><td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td style="text-align:center">${s.rev}</td><td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td></tr>`}).join('')||'<tr><td colspan="12" class="no-data">Không có dữ liệu</td></tr>'}
+function renderSdTable(ss,q=''){let l=ss||[];if(q)l=l.filter(s=>(s.name+s.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
+document.getElementById('sd-body').innerHTML=l.map(s=>{let dl=0;if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));return`<tr><td style="font-size:11px;font-family:monospace">${s.id}</td><td>${s.name.length>22?s.name.slice(0,21)+'…':s.name}</td><td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td><td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td style="text-align:center">${s.rev}</td><td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td><td>${e?`<button class="btn sm" onclick="editSd('${s.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delSd('${s.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="13" class="no-data">Không có dữ liệu</td></tr>'}
 
-function renderRfiTable(rs,q=''){let l=rs||[];if(q)l=l.filter(r=>(r.subject+r.id).toLowerCase().includes(q.toLowerCase()));
-document.getElementById('rfi-body').innerHTML=l.map(r=>`<tr><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td></tr>`).join('')||'<tr><td colspan="10" class="no-data">Không có dữ liệu</td></tr>'}
+function renderRfiTable(rs,q=''){let l=rs||[];if(q)l=l.filter(r=>(r.subject+r.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
+document.getElementById('rfi-body').innerHTML=l.map(r=>`<tr><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td><td>${e?`<button class="btn sm" onclick="editRfi('${r.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delRfi('${r.id}')">Xóa</button>`:''}</td></tr>`).join('')||'<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>'}
 
 // ==================== CRUD ====================
 async function saveTd(){if(!canEdit())return;const id=gv('ti-id'),name=gv('ti-name'),block=gv('ti-block'),floor=gv('ti-floor'),cat=gv('ti-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
