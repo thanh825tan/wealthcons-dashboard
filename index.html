@@ -18,8 +18,6 @@ body{background:var(--bg);font-family:-apple-system,system-ui,"Segoe UI",Roboto,
 .dialog input{width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:10px 14px;font-size:14px;font-family:monospace;outline:none;margin-bottom:10px}
 .dialog input:focus{border-color:var(--blue)}
 .dialog-err{color:var(--red);font-size:12px;margin-bottom:10px;display:none}
-.dialog-steps{background:var(--bg2);border-radius:var(--r);padding:14px;margin-bottom:14px;font-size:12px;line-height:1.8}
-.dialog-steps b{color:var(--blue)}
 .topbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .topbar-title{font-size:16px;font-weight:600;flex:1;min-width:120px}
 .sync-ind{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);background:var(--bg2);padding:4px 10px;border-radius:20px}
@@ -108,7 +106,45 @@ tr:hover td{background:var(--bg2)}
 .toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:var(--r);font-size:13px;z-index:1000;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}.toast.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
 .toast.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
-@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.fg{grid-template-columns:1fr 1fr}}
+
+/* === DETAIL MODAL === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);padding:0;max-width:640px;width:94%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.18);transform:translateY(12px);transition:transform .2s}
+.modal-overlay.show .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.modal-header h3{font-size:15px;font-weight:600}
+.modal-close{border:none;background:none;color:var(--tx2);font-size:20px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1}
+.modal-close:hover{background:var(--bg3);color:var(--tx)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:16px}
+.detail-item{display:flex;flex-direction:column;gap:2px}
+.detail-label{font-size:11px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
+.detail-value{font-size:13px;font-weight:500}
+.detail-divider{grid-column:1/-1;border-top:1px solid var(--bd);margin:4px 0}
+.detail-section-title{grid-column:1/-1;font-size:12px;font-weight:600;color:var(--blue);margin-top:4px}
+
+/* RFI link chips inside SD detail */
+.rfi-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;transition:all .15s;margin:3px 3px 3px 0}
+.rfi-chip:hover{background:var(--blue-bg);border-color:var(--blue)}
+.rfi-chip .rfi-chip-id{font-family:monospace;font-weight:600;font-size:11px}
+.rfi-chip .rfi-chip-status{font-size:10px;padding:1px 5px;border-radius:3px}
+.rfi-chip-none{font-size:12px;color:var(--tx2);padding:6px 0}
+
+/* RFI count badge in table */
+.rfi-count{display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;transition:all .15s}
+.rfi-count:hover{opacity:.8}
+.rfi-count.has-rfi{background:var(--blue-bg);color:var(--blue)}
+.rfi-count.has-rfi-warn{background:var(--amber-bg);color:var(--amber)}
+.rfi-count.has-rfi-bad{background:var(--red-bg);color:var(--red)}
+.rfi-count.no-rfi{background:var(--bg3);color:var(--tx2)}
+
+/* Clickable row */
+.clickable-row{cursor:pointer}
+.clickable-row td{transition:background .1s}
+.clickable-row:hover td{background:var(--blue-bg) !important}
+
+@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.fg{grid-template-columns:1fr 1fr}.detail-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -124,6 +160,17 @@ tr:hover td{background:var(--bg2)}
     <button class="btn pri" onclick="doConnect()" id="btn-connect">Đăng nhập</button>
     <button class="btn" onclick="doConnect()">Xem không cần mật khẩu</button>
   </div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <div class="modal-header">
+    <h3 id="modal-title">Chi tiết</h3>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modal-body"></div>
 </div>
 </div>
 
@@ -192,14 +239,14 @@ tr:hover td{background:var(--bg2)}
     <div class="chart-box"><div class="chart-title">Trạng thái Shopdrawing</div><div class="chart-sub" id="sd-pie-sub"></div><div class="legend" id="sd-pie-leg"></div><div class="chart-wrap" style="height:220px"><canvas id="c-sd-pie"></canvas></div></div>
     <div class="chart-box"><div class="chart-title">Số lượng theo trạng thái</div><div class="chart-sub">Chi tiết</div><div id="sd-status-cards" style="display:flex;flex-direction:column;gap:8px;padding:10px 0"></div></div>
   </div>
-  <div class="tbl-action"><span class="sec-title">Theo dõi Shopdrawing</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderSdTable(getFlt().s,this.value)"></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Mã SD</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>TT</th><th id="th-sd-act">Thao tác</th></tr></thead><tbody id="sd-body"></tbody></table></div>
+  <div class="tbl-action"><span class="sec-title">Theo dõi Shopdrawing</span><span style="font-size:11px;color:var(--tx2);margin-left:4px">(click dòng để xem chi tiết)</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderSdTable(getFlt().s,this.value)"></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã SD</th><th>Tên</th><th>PK</th><th>Tầng</th><th>HM</th><th>KH Nộp</th><th>TT Nộp</th><th>KH Duyệt</th><th>TT Duyệt</th><th>Trễ</th><th>Rev</th><th>TT</th><th>TT Thiết kế</th><th id="th-sd-act">Thao tác</th></tr></thead><tbody id="sd-body"></tbody></table></div>
 </div>
 
 <!-- RFI -->
 <div id="page-rfi" class="page">
-  <div class="tbl-action"><span class="sec-title">Theo dõi RFI</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderRfiTable(getFlt().r,this.value)"></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Nội dung</th><th>PK</th><th>Tầng</th><th>HM</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>TT</th><th id="th-rfi-act">Thao tác</th></tr></thead><tbody id="rfi-body"></tbody></table></div>
+  <div class="tbl-action"><span class="sec-title">Theo dõi RFI</span><span style="font-size:11px;color:var(--tx2);margin-left:4px">(click dòng để xem chi tiết)</span><input class="srch" placeholder="Tìm kiếm..." oninput="renderRfiTable(getFlt().r,this.value)"></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Nội dung</th><th>PK</th><th>Tầng</th><th>HM</th><th>CV liên kết</th><th>SD liên kết</th><th>Phát sinh</th><th>Hạn PH</th><th>Đã PH</th><th>Mức độ</th><th>TT</th><th id="th-rfi-act">Thao tác</th></tr></thead><tbody id="rfi-body"></tbody></table></div>
 </div>
 
 <!-- NHẬP LIỆU -->
@@ -292,8 +339,19 @@ async function api(params){
   const url=new URL(API_URL);
   for(const k in params)url.searchParams.set(k,typeof params[k]==='object'?JSON.stringify(params[k]):params[k]);
   url.searchParams.set('pw',PW);
-  const resp=await fetch(url.toString());
-  return await resp.json();
+  try{
+    const resp=await fetch(url.toString(),{redirect:'follow',headers:{'Accept':'application/json'}});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    return await resp.json();
+  }catch(e){
+    // Fallback: JSONP-style via script tag nếu fetch bị CORS
+    return new Promise((resolve,reject)=>{
+      const cbName='_wc_cb_'+Date.now();
+      // Dùng Google Apps Script không hỗ trợ JSONP, thử lại fetch với mode
+      // Nếu lỗi CORS thực sự thì báo rõ cho user
+      reject(new Error('Không kết nối được API. Lỗi: '+e.message));
+    });
+  }
 }
 
 async function apiWrite(action,data){
@@ -302,11 +360,18 @@ async function apiWrite(action,data){
   url.searchParams.set('pw',PW);
   url.searchParams.set('data',JSON.stringify(data));
   setSyncStatus('syncing','Đang lưu...');
-  const resp=await fetch(url.toString());
-  const result=await resp.json();
-  if(result.ok){toast(result.message||'Thành công','ok');await refreshData()}
-  else{toast(result.error||'Lỗi','err')}
-  return result;
+  try{
+    const resp=await fetch(url.toString(),{redirect:'follow',headers:{'Accept':'application/json'}});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const result=await resp.json();
+    if(result.ok){toast(result.message||'Thành công','ok');await refreshData()}
+    else{toast(result.error||'Lỗi','err')}
+    return result;
+  }catch(e){
+    toast('Lỗi kết nối: '+e.message,'err');
+    setSyncStatus('err','Lỗi kết nối');
+    return{ok:false,error:e.message};
+  }
 }
 
 // ==================== CONNECT ====================
@@ -326,7 +391,8 @@ async function doConnect(){
     await refreshData();
     startPolling();
   }catch(e){
-    showErr('Không kết nối được. Kiểm tra lại Apps Script deployment.');
+    showErr('Không kết nối được. Lỗi: '+e.message+'. Thử mở trực tiếp API URL trên trình duyệt để kiểm tra.');
+    console.error('Connect error:',e);
   }
   document.getElementById('btn-connect').disabled=false;
   document.getElementById('btn-connect').textContent='Đăng nhập';
@@ -401,6 +467,7 @@ function parseRFIs(rows){RFIS=(rows||[]).filter(r=>r.MA_RFI).map(r=>({id:r.MA_RF
 function dd(s){return s&&s.length>=10?new Date(s):null}
 function dDiff(a,b){if(!a||!b)return null;return Math.round((new Date(b)-new Date(a))/86400000)}
 function fmtD(s){if(!s||s.length<10)return'—';return s.slice(5).replace('-','/')}
+function fmtDFull(s){if(!s||s.length<10)return'—';const d=new Date(s);return d.toLocaleDateString('vi',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function gv(id){const el=document.getElementById(id);return el?el.value.trim():''}
 function setv(id,val){const el=document.getElementById(id);if(el)el.value=val||''}
 function getStatus(t){if(t.ap>=100)return'DONE';if(dd(t.pe)&&dd(t.pe)<TODAY&&t.ap<100)return'TRE';if(t.as)return'DANG';return'CBA'}
@@ -408,6 +475,148 @@ function getDelay(t){const st=getStatus(t);if(st==='DONE'&&t.ae&&t.pe)return Mat
 function getFlt(){return{t:TASKS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),s:SDS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),r:RFIS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat))}}
 function setSyncStatus(s,t){const d=document.getElementById('sync-dot'),x=document.getElementById('sync-txt');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':'')+(s==='err'?' err':'');x.textContent=t}
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'ok');setTimeout(()=>t.className='toast',3000)}
+
+// ==================== CROSS-REFERENCE HELPERS ====================
+// Tìm RFI liên quan đến 1 SD: cùng block+floor+cat, hoặc cùng mã CV liên kết
+function getRfisForSd(sd){
+  return RFIS.filter(r=>{
+    // Liên kết trực tiếp qua mã CV
+    if(sd.tid && r.tid && sd.tid===r.tid) return true;
+    // Cùng phân khu + tầng + hạng mục
+    if(sd.block && sd.floor && sd.cat && r.block===sd.block && r.floor===sd.floor && r.cat===sd.cat) return true;
+    return false;
+  });
+}
+
+// Tìm SD liên quan đến 1 RFI
+function getSdsForRfi(rfi){
+  return SDS.filter(sd=>{
+    if(rfi.tid && sd.tid && rfi.tid===sd.tid) return true;
+    if(rfi.block && rfi.floor && rfi.cat && sd.block===rfi.block && sd.floor===rfi.floor && sd.cat===rfi.cat) return true;
+    return false;
+  });
+}
+
+// ==================== MODAL ====================
+function openModal(title,html){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=html;
+  document.getElementById('detail-modal').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('detail-modal').classList.remove('show');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+function showSdDetail(sdId){
+  const s=SDS.find(x=>x.id===sdId);
+  if(!s)return;
+  const linkedRfis=getRfisForSd(s);
+  const linkedTask=s.tid?TASKS.find(t=>t.id===s.tid):null;
+  let dl=0;
+  if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));
+  else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));
+
+  const openRfi=linkedRfis.filter(r=>r.status==='MO'||r.status==='QUA_HAN').length;
+  const qhRfi=linkedRfis.filter(r=>r.status==='QUA_HAN').length;
+
+  let html=`<div class="detail-grid">
+    <div class="detail-item"><div class="detail-label">Mã SD</div><div class="detail-value" style="font-family:monospace">${s.id}</div></div>
+    <div class="detail-item"><div class="detail-label">Trạng thái</div><div class="detail-value"><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></div></div>
+    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Tên bản vẽ</div><div class="detail-value">${s.name}</div></div>
+    <div class="detail-item"><div class="detail-label">Phân khu</div><div class="detail-value">${s.block||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">Tầng</div><div class="detail-value">${s.floor||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">Hạng mục</div><div class="detail-value">${s.cat||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">Revision</div><div class="detail-value">${s.rev}</div></div>
+    <div class="detail-divider"></div>
+    <div class="detail-item"><div class="detail-label">KH Ngày nộp</div><div class="detail-value">${fmtDFull(s.ps)}</div></div>
+    <div class="detail-item"><div class="detail-label">TT Ngày nộp</div><div class="detail-value">${fmtDFull(s.as)}</div></div>
+    <div class="detail-item"><div class="detail-label">KH Ngày duyệt</div><div class="detail-value">${fmtDFull(s.pa)}</div></div>
+    <div class="detail-item"><div class="detail-label">TT Ngày duyệt</div><div class="detail-value">${fmtDFull(s.aa)}</div></div>
+    <div class="detail-item"><div class="detail-label">Trễ</div><div class="detail-value" style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+' ngày':'Không trễ'}</div></div>`;
+
+  if(linkedTask){
+    html+=`<div class="detail-divider"></div>
+    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Công việc liên kết</div><div class="detail-value"><span style="font-family:monospace;font-size:11px">${linkedTask.id}</span> — ${linkedTask.name} <span class="badge ${ST_CLS[getStatus(linkedTask)]}" style="margin-left:4px">${ST_LB[getStatus(linkedTask)]}</span></div></div>`;
+  }
+
+  html+=`<div class="detail-divider"></div>
+    <div class="detail-section-title">Thông tin thiết kế — RFI liên quan (${linkedRfis.length})</div>`;
+
+  if(linkedRfis.length===0){
+    html+=`<div style="grid-column:1/-1" class="rfi-chip-none">Không có RFI nào liên quan đến bản vẽ này.</div>`;
+  } else {
+    html+=`<div style="grid-column:1/-1;margin-bottom:4px">
+      <span style="font-size:12px;color:var(--tx2)">Đang mở: <b style="color:${openRfi>0?'var(--amber)':'var(--green)'}">${openRfi}</b> | Quá hạn: <b style="color:${qhRfi>0?'var(--red)':'var(--green)'}">${qhRfi}</b> | Tổng: <b>${linkedRfis.length}</b></span>
+    </div>`;
+    html+=`<div style="grid-column:1/-1;display:flex;flex-wrap:wrap">`;
+    linkedRfis.forEach(r=>{
+      const stCls=RI_CLS[r.status]||'';
+      html+=`<div class="rfi-chip" onclick="event.stopPropagation();showRfiDetail('${r.id}')">
+        <span class="rfi-chip-id">${r.id}</span>
+        <span class="rfi-chip-status badge ${stCls}">${RI_LB[r.status]||r.status}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`</div>`;
+  openModal('Chi tiết Shopdrawing — '+s.id, html);
+}
+
+function showRfiDetail(rfiId){
+  const r=RFIS.find(x=>x.id===rfiId);
+  if(!r)return;
+  const linkedSds=getSdsForRfi(r);
+  const linkedTask=r.tid?TASKS.find(t=>t.id===r.tid):null;
+
+  let html=`<div class="detail-grid">
+    <div class="detail-item"><div class="detail-label">Mã RFI</div><div class="detail-value" style="font-family:monospace">${r.id}</div></div>
+    <div class="detail-item"><div class="detail-label">Trạng thái</div><div class="detail-value"><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></div></div>
+    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Nội dung</div><div class="detail-value">${r.subject}</div></div>
+    <div class="detail-item"><div class="detail-label">Mức độ</div><div class="detail-value"><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></div></div>
+    <div class="detail-item"><div class="detail-label">Phân khu</div><div class="detail-value">${r.block||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">Tầng</div><div class="detail-value">${r.floor||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">Hạng mục</div><div class="detail-value">${r.cat||'—'}</div></div>
+    <div class="detail-divider"></div>
+    <div class="detail-item"><div class="detail-label">Ngày phát sinh</div><div class="detail-value">${fmtDFull(r.rd)}</div></div>
+    <div class="detail-item"><div class="detail-label">Hạn phản hồi</div><div class="detail-value">${fmtDFull(r.rqd)}</div></div>
+    <div class="detail-item"><div class="detail-label">Ngày đã phản hồi</div><div class="detail-value">${fmtDFull(r.rpd)}</div></div>`;
+
+  // Tính trễ phản hồi
+  if(r.rqd){
+    if(r.rpd){
+      const dl=dDiff(r.rqd,r.rpd);
+      html+=`<div class="detail-item"><div class="detail-label">Trễ phản hồi</div><div class="detail-value" style="color:${dl>0?'var(--red)':'var(--green)'}">${dl>0?'+'+dl+' ngày':'Đúng hạn'}</div></div>`;
+    } else if(r.status!=='DONG'){
+      const dl=dDiff(r.rqd,TODAY.toISOString().slice(0,10));
+      if(dl>0) html+=`<div class="detail-item"><div class="detail-label">Quá hạn</div><div class="detail-value" style="color:var(--red)">+${dl} ngày (chưa phản hồi)</div></div>`;
+    }
+  }
+
+  if(linkedTask){
+    html+=`<div class="detail-divider"></div>
+    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Công việc liên kết</div><div class="detail-value"><span style="font-family:monospace;font-size:11px">${linkedTask.id}</span> — ${linkedTask.name}</div></div>`;
+  }
+
+  if(linkedSds.length>0){
+    html+=`<div class="detail-divider"></div>
+    <div class="detail-section-title">Shopdrawing liên quan (${linkedSds.length})</div>
+    <div style="grid-column:1/-1;display:flex;flex-wrap:wrap">`;
+    linkedSds.forEach(sd=>{
+      html+=`<div class="rfi-chip" onclick="event.stopPropagation();showSdDetail('${sd.id}')">
+        <span class="rfi-chip-id">${sd.id}</span>
+        <span class="rfi-chip-status badge ${SD_CLS[sd.status]||''}">${SD_LB[sd.status]||sd.status}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`</div>`;
+  openModal('Chi tiết RFI — '+r.id, html);
+}
 
 // ==================== CONFIG ====================
 function renderCfgTags(){
@@ -484,10 +693,38 @@ function renderTdTable(ts,q=''){let l=ts||[];if(q)l=l.filter(t=>(t.name+t.id).to
 document.getElementById('td-body').innerHTML=l.map(t=>{const st=getStatus(t),dl=getDelay(t);return`<tr><td style="font-size:11px;font-family:monospace">${t.id}</td><td>${t.cp?'<span class="cp-dot"></span>':''}${t.name.length>26?t.name.slice(0,25)+'…':t.name}</td><td>${t.block}</td><td>${t.floor}</td><td>${t.cat}</td><td style="text-align:right">${t.pp}%</td><td style="text-align:right">${t.ap}%</td><td><div class="pb-wrap"><div class="pb-bg"><div class="pb-plan" style="width:${t.pp}%"><div class="pb-act" style="width:${t.ap>0?Math.min(100,t.ap/Math.max(t.pp,.1)*100):0}%;background:${t.ap>=t.pp?'#639922':'#e24b4a'}"></div></div></div></div></td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td><span class="badge ${ST_CLS[st]}">${ST_LB[st]}</span></td><td>${t.cp?'<span style="color:var(--red);font-weight:600;font-size:11px">CP</span>':'—'}</td><td>${e?`<button class="btn sm" onclick="editTd('${t.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delTd('${t.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="12" class="no-data">Không có dữ liệu</td></tr>'}
 
 function renderSdTable(ss,q=''){let l=ss||[];if(q)l=l.filter(s=>(s.name+s.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
-document.getElementById('sd-body').innerHTML=l.map(s=>{let dl=0;if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));return`<tr><td style="font-size:11px;font-family:monospace">${s.id}</td><td>${s.name.length>22?s.name.slice(0,21)+'…':s.name}</td><td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td><td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td style="text-align:center">${s.rev}</td><td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td><td>${e?`<button class="btn sm" onclick="editSd('${s.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delSd('${s.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="13" class="no-data">Không có dữ liệu</td></tr>'}
+document.getElementById('sd-body').innerHTML=l.map(s=>{
+  let dl=0;
+  if(s.status==='DA_DUYET'&&s.aa&&s.pa)dl=Math.max(0,dDiff(s.pa,s.aa));
+  else if(s.status!=='DA_DUYET'&&s.status!=='CHUA_NOP'&&s.pa)dl=Math.max(0,dDiff(s.pa,TODAY.toISOString().slice(0,10)));
+
+  // RFI liên quan
+  const linkedRfis=getRfisForSd(s);
+  const rfiCount=linkedRfis.length;
+  const openCount=linkedRfis.filter(r=>r.status==='MO'||r.status==='QUA_HAN').length;
+  const qhCount=linkedRfis.filter(r=>r.status==='QUA_HAN').length;
+
+  let rfiCls='no-rfi';
+  if(qhCount>0)rfiCls='has-rfi-bad';
+  else if(openCount>0)rfiCls='has-rfi-warn';
+  else if(rfiCount>0)rfiCls='has-rfi';
+
+  let rfiLabel='0 RFI';
+  if(rfiCount>0){
+    rfiLabel=`${rfiCount} RFI`;
+    if(openCount>0) rfiLabel+=` (${openCount} mở)`;
+  }
+
+  return`<tr class="clickable-row" onclick="showSdDetail('${s.id}')"><td style="font-size:11px;font-family:monospace">${s.id}</td><td>${s.name.length>22?s.name.slice(0,21)+'…':s.name}</td><td>${s.block}</td><td>${s.floor}</td><td>${s.cat}</td><td>${fmtD(s.ps)}</td><td>${fmtD(s.as)}</td><td>${fmtD(s.pa)}</td><td>${fmtD(s.aa)}</td><td style="color:${dl>0?'var(--red)':'var(--tx2)'}">${dl>0?'+'+dl+'ng':'—'}</td><td style="text-align:center">${s.rev}</td><td><span class="badge ${SD_CLS[s.status]||''}">${SD_LB[s.status]||s.status}</span></td><td><span class="rfi-count ${rfiCls}" onclick="event.stopPropagation();showSdDetail('${s.id}')">${rfiLabel}</span></td><td>${e?`<button class="btn sm" onclick="event.stopPropagation();editSd('${s.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="event.stopPropagation();delSd('${s.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="14" class="no-data">Không có dữ liệu</td></tr>'}
 
 function renderRfiTable(rs,q=''){let l=rs||[];if(q)l=l.filter(r=>(r.subject+r.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
-document.getElementById('rfi-body').innerHTML=l.map(r=>`<tr><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td><td>${e?`<button class="btn sm" onclick="editRfi('${r.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="delRfi('${r.id}')">Xóa</button>`:''}</td></tr>`).join('')||'<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>'}
+document.getElementById('rfi-body').innerHTML=l.map(r=>{
+  // Tìm SD liên quan
+  const linkedSds=getSdsForRfi(r);
+  const sdInfo=linkedSds.length>0?linkedSds.map(sd=>sd.id).join(', '):'—';
+  const linkedTask=r.tid||'—';
+
+  return`<tr class="clickable-row" onclick="showRfiDetail('${r.id}')"><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td style="font-size:11px;font-family:monospace">${linkedTask}</td><td style="font-size:11px;font-family:monospace">${sdInfo}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td><td>${e?`<button class="btn sm" onclick="event.stopPropagation();editRfi('${r.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="event.stopPropagation();delRfi('${r.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="13" class="no-data">Không có dữ liệu</td></tr>'}
 
 // ==================== CRUD ====================
 async function saveTd(){if(!canEdit())return;const id=gv('ti-id'),name=gv('ti-name'),block=gv('ti-block'),floor=gv('ti-floor'),cat=gv('ti-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
