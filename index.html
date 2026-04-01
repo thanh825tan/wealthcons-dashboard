@@ -214,6 +214,7 @@ tr:hover td{background:var(--bg2)}
   <select id="f-block" onchange="applyF()"><option value="">Tất cả phân khu</option></select>
   <select id="f-floor" onchange="applyF()"><option value="">Tất cả tầng</option></select>
   <select id="f-cat" onchange="applyF()"><option value="">Tất cả hạng mục</option></select>
+  <select id="f-dept" onchange="applyF()"><option value="">Tất cả bộ phận</option><option value="MEP">MEP</option><option value="CIV">CIV</option></select>
 </div>
 
 <!-- TỔNG QUAN -->
@@ -297,6 +298,7 @@ tr:hover td{background:var(--bg2)}
         <div class="fg-group"><label>TT Ngày duyệt</label><input type="date" id="si-aa"></div>
         <div class="fg-group"><label>Revision</label><input type="number" id="si-rev" min="0"></div>
         <div class="fg-group"><label>Trạng thái *</label><select id="si-status"><option value="CHUA_NOP">Chưa nộp</option><option value="CHO_DUYET">Chờ duyệt</option><option value="REJECT">Bị từ chối</option><option value="DA_DUYET">Đã duyệt</option></select></div>
+        <div class="fg-group" style="grid-column:1/-1"><label>Ghi chú thiết kế</label><textarea id="si-note" rows="2" style="width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:6px 9px;font-size:13px;font-family:inherit;resize:vertical;outline:none" placeholder="Thông tin thiết kế, lưu ý..."></textarea></div>
       </div>
       <div class="btn-row"><button class="btn pri" onclick="saveSd()">Lưu</button></div>
     </div>
@@ -310,6 +312,7 @@ tr:hover td{background:var(--bg2)}
         <div class="fg-group"><label>Mã RFI *</label><input id="ri-id"></div>
         <div class="fg-group" style="grid-column:span 2"><label>Nội dung *</label><input id="ri-sub"></div>
         <div class="fg-group"><label>Mã CV liên kết</label><input id="ri-tid"></div>
+        <div class="fg-group"><label>Mã SD liên kết</label><input id="ri-sdid" placeholder="VD: SD-001, SD-002"></div>
         <div class="fg-group"><label>Phân khu *</label><select id="ri-block"></select></div>
         <div class="fg-group"><label>Tầng *</label><select id="ri-floor"></select></div>
         <div class="fg-group"><label>Hạng mục *</label><select id="ri-cat"></select></div>
@@ -330,7 +333,7 @@ const TODAY=new Date();
 let API_URL='https://script.google.com/macros/s/AKfycbzGTNGZyoJ16dIST9gmjJI_GvfDjsjGG9kgoVpQoCjw5Y_MT5dCCX1p1zf0Q3Enq-o/exec',ROLE='viewer',PW='';
 let CFG={projName:'',blocks:[],floors:[],cats:[]};
 let TASKS=[],SDS=[],RFIS=[];
-let fBlock='',fFloor='',fCat='';
+let fBlock='',fFloor='',fCat='',fDept='';
 let CHS={};
 let pollTimer=null;
 
@@ -460,8 +463,8 @@ function parseCfg(rows){
   });
 }
 function parseTasks(rows){TASKS=(rows||[]).filter(r=>r.MA_CV).map(r=>({id:r.MA_CV.trim(),name:(r.TEN_CV||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),ps:r.KH_BAT_DAU||'',pe:r.KH_KET_THUC||'',as:r.TT_BAT_DAU||'',ae:r.TT_KET_THUC||'',pp:parseFloat(r.KH_PHAN_TRAM)||0,ap:parseFloat(r.TT_PHAN_TRAM)||0,w:parseFloat(r.TRONG_SO)||0.05,cp:(r.DUONG_GANG||'').toUpperCase()==='TRUE'}))}
-function parseSDs(rows){SDS=(rows||[]).filter(r=>r.MA_SD).map(r=>({id:r.MA_SD.trim(),name:(r.TEN_BAN_VE||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),ps:r.KH_NGAY_NOP||'',as:r.TT_NGAY_NOP||'',pa:r.KH_NGAY_DUYET||'',aa:r.TT_NGAY_DUYET||'',rev:parseInt(r.LAN_SUA)||0,status:(r.TRANG_THAI||'CHUA_NOP').trim()}))}
-function parseRFIs(rows){RFIS=(rows||[]).filter(r=>r.MA_RFI).map(r=>({id:r.MA_RFI.trim(),subject:(r.NOI_DUNG||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),rd:r.NGAY_PHAT_SINH||'',rqd:r.HAN_PHAN_HOI||'',rpd:r.NGAY_DA_PHAN_HOI||'',imp:(r.MUC_DO||'TRUNG_BINH').trim(),status:(r.TRANG_THAI||'MO').trim()}))}
+function parseSDs(rows){SDS=(rows||[]).filter(r=>r.MA_SD).map(r=>({id:r.MA_SD.trim(),name:(r.TEN_BAN_VE||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),ps:r.KH_NGAY_NOP||'',as:r.TT_NGAY_NOP||'',pa:r.KH_NGAY_DUYET||'',aa:r.TT_NGAY_DUYET||'',rev:parseInt(r.LAN_SUA)||0,status:(r.TRANG_THAI||'CHUA_NOP').trim(),note:(r.GHI_CHU_THIET_KE||'').trim()}))}
+function parseRFIs(rows){RFIS=(rows||[]).filter(r=>r.MA_RFI).map(r=>({id:r.MA_RFI.trim(),subject:(r.NOI_DUNG||'').trim(),tid:(r.MA_CV_LIEN_KET||'').trim(),sdid:(r.MA_SD_LIEN_KET||'').trim(),block:(r.PHAN_KHU||'').trim(),floor:(r.TANG||'').trim(),cat:(r.HANG_MUC||'').trim(),rd:r.NGAY_PHAT_SINH||'',rqd:r.HAN_PHAN_HOI||'',rpd:r.NGAY_DA_PHAN_HOI||'',imp:(r.MUC_DO||'TRUNG_BINH').trim(),status:(r.TRANG_THAI||'MO').trim()}))}
 
 // ==================== HELPERS ====================
 function dd(s){return s&&s.length>=10?new Date(s):null}
@@ -472,15 +475,21 @@ function gv(id){const el=document.getElementById(id);return el?el.value.trim():'
 function setv(id,val){const el=document.getElementById(id);if(el)el.value=val||''}
 function getStatus(t){if(t.ap>=100)return'DONE';if(dd(t.pe)&&dd(t.pe)<TODAY&&t.ap<100)return'TRE';if(t.as)return'DANG';return'CBA'}
 function getDelay(t){const st=getStatus(t);if(st==='DONE'&&t.ae&&t.pe)return Math.max(0,dDiff(t.pe,t.ae));if(st==='TRE'&&t.pe)return Math.max(0,dDiff(t.pe,TODAY.toISOString().slice(0,10)));return 0}
-function getFlt(){return{t:TASKS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),s:SDS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)),r:RFIS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat))}}
+function matchDept(cat,dept){if(!dept)return true;const c=(cat||'').toUpperCase();if(dept==='MEP')return c.startsWith('MEP')||c==='MEP-CB'||c==='MEP-EL'||c==='MEP-ME'||c==='MEP-PB'||c.indexOf('MEP')>=0;if(dept==='CIV')return c.startsWith('CIV')||c.indexOf('CIV')>=0;return true}
+function getFlt(){return{t:TASKS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)&&matchDept(x.cat,fDept)),s:SDS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)&&matchDept(x.cat,fDept)),r:RFIS.filter(x=>(!fBlock||x.block===fBlock)&&(!fFloor||x.floor===fFloor)&&(!fCat||x.cat===fCat)&&matchDept(x.cat,fDept))}}
 function setSyncStatus(s,t){const d=document.getElementById('sync-dot'),x=document.getElementById('sync-txt');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':'')+(s==='err'?' err':'');x.textContent=t}
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'ok');setTimeout(()=>t.className='toast',3000)}
 
 // ==================== CROSS-REFERENCE HELPERS ====================
-// Tìm RFI liên quan đến 1 SD: cùng block+floor+cat, hoặc cùng mã CV liên kết
+// Tìm RFI liên quan đến 1 SD: trực tiếp qua MA_SD_LIEN_KET, hoặc cùng mã CV, hoặc cùng block+floor+cat
 function getRfisForSd(sd){
   return RFIS.filter(r=>{
-    // Liên kết trực tiếp qua mã CV
+    // Liên kết trực tiếp qua MA_SD_LIEN_KET (có thể chứa nhiều mã, phân cách bằng dấu phẩy)
+    if(r.sdid){
+      const sdids=r.sdid.split(',').map(s=>s.trim());
+      if(sdids.includes(sd.id)) return true;
+    }
+    // Liên kết qua mã CV
     if(sd.tid && r.tid && sd.tid===r.tid) return true;
     // Cùng phân khu + tầng + hạng mục
     if(sd.block && sd.floor && sd.cat && r.block===sd.block && r.floor===sd.floor && r.cat===sd.cat) return true;
@@ -491,6 +500,11 @@ function getRfisForSd(sd){
 // Tìm SD liên quan đến 1 RFI
 function getSdsForRfi(rfi){
   return SDS.filter(sd=>{
+    // Liên kết trực tiếp qua MA_SD_LIEN_KET
+    if(rfi.sdid){
+      const sdids=rfi.sdid.split(',').map(s=>s.trim());
+      if(sdids.includes(sd.id)) return true;
+    }
     if(rfi.tid && sd.tid && rfi.tid===sd.tid) return true;
     if(rfi.block && rfi.floor && rfi.cat && sd.block===rfi.block && sd.floor===rfi.floor && sd.cat===rfi.cat) return true;
     return false;
@@ -561,6 +575,21 @@ function showSdDetail(sdId){
     });
     html+=`</div>`;
   }
+
+  // Ghi chú thiết kế
+  html+=`<div class="detail-divider"></div>
+    <div class="detail-section-title">Ghi chú thiết kế</div>
+    <div style="grid-column:1/-1">`;
+  if(s.note){
+    html+=`<div style="font-size:13px;line-height:1.6;white-space:pre-wrap;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)">${s.note}</div>`;
+  } else {
+    html+=`<div class="rfi-chip-none">Chưa có ghi chú thiết kế.</div>`;
+  }
+  if(canEdit()){
+    html+=`<div style="margin-top:8px"><textarea id="sd-note-input" rows="3" style="width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:var(--r);padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none"placeholder="Nhập ghi chú thiết kế...">${s.note||''}</textarea>
+    <div style="margin-top:6px;display:flex;gap:8px;justify-content:flex-end"><button class="btn sm pri" onclick="saveSDNote('${s.id}')">Lưu ghi chú</button></div></div>`;
+  }
+  html+=`</div>`;
 
   html+=`</div>`;
   openModal('Chi tiết Shopdrawing — '+s.id, html);
@@ -719,12 +748,28 @@ document.getElementById('sd-body').innerHTML=l.map(s=>{
 
 function renderRfiTable(rs,q=''){let l=rs||[];if(q)l=l.filter(r=>(r.subject+r.id).toLowerCase().includes(q.toLowerCase()));const e=canEdit(),o=isOwner();
 document.getElementById('rfi-body').innerHTML=l.map(r=>{
-  // Tìm SD liên quan
-  const linkedSds=getSdsForRfi(r);
-  const sdInfo=linkedSds.length>0?linkedSds.map(sd=>sd.id).join(', '):'—';
+  // SD liên quan: ưu tiên MA_SD_LIEN_KET trực tiếp, fallback sang cross-ref
+  let sdInfo='—';
+  if(r.sdid){
+    sdInfo=r.sdid.split(',').map(s=>s.trim()).filter(Boolean).map(sid=>`<span style="cursor:pointer;color:var(--blue);text-decoration:underline" onclick="event.stopPropagation();showSdDetail('${sid}')">${sid}</span>`).join(', ');
+  } else {
+    const linkedSds=getSdsForRfi(r);
+    if(linkedSds.length>0) sdInfo=linkedSds.map(sd=>`<span style="cursor:pointer;color:var(--blue);text-decoration:underline" onclick="event.stopPropagation();showSdDetail('${sd.id}')">${sd.id}</span>`).join(', ');
+  }
   const linkedTask=r.tid||'—';
 
   return`<tr class="clickable-row" onclick="showRfiDetail('${r.id}')"><td style="font-size:11px;font-family:monospace">${r.id}</td><td title="${r.subject}">${r.subject.length>30?r.subject.slice(0,29)+'…':r.subject}</td><td>${r.block}</td><td>${r.floor}</td><td>${r.cat}</td><td style="font-size:11px;font-family:monospace">${linkedTask}</td><td style="font-size:11px;font-family:monospace">${sdInfo}</td><td>${fmtD(r.rd)}</td><td>${fmtD(r.rqd)}</td><td>${fmtD(r.rpd)}</td><td><span class="badge ${IMP_CLS[r.imp]||''}">${IMP_LB[r.imp]||r.imp}</span></td><td><span class="badge ${RI_CLS[r.status]||''}">${RI_LB[r.status]||r.status}</span></td><td>${e?`<button class="btn sm" onclick="event.stopPropagation();editRfi('${r.id}')">Sửa</button>`:''}${o?` <button class="btn sm dan" onclick="event.stopPropagation();delRfi('${r.id}')">Xóa</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="13" class="no-data">Không có dữ liệu</td></tr>'}
+
+// ==================== SAVE SD NOTE ====================
+async function saveSDNote(sdId){
+  if(!canEdit())return;
+  const note=document.getElementById('sd-note-input').value.trim();
+  const s=SDS.find(x=>x.id===sdId);
+  if(!s)return;
+  const d={MA_SD:s.id,TEN_BAN_VE:s.name,MA_CV_LIEN_KET:s.tid,PHAN_KHU:s.block,TANG:s.floor,HANG_MUC:s.cat,KH_NGAY_NOP:s.ps,TT_NGAY_NOP:s.as,KH_NGAY_DUYET:s.pa,TT_NGAY_DUYET:s.aa,LAN_SUA:String(s.rev),TRANG_THAI:s.status,GHI_CHU_THIET_KE:note};
+  await apiWrite('edit_sd',d);
+  closeModal();
+}
 
 // ==================== CRUD ====================
 async function saveTd(){if(!canEdit())return;const id=gv('ti-id'),name=gv('ti-name'),block=gv('ti-block'),floor=gv('ti-floor'),cat=gv('ti-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
@@ -732,29 +777,29 @@ const d={MA_CV:id,TEN_CV:name,PHAN_KHU:block,TANG:floor,HANG_MUC:cat,KH_BAT_DAU:
 const eid=gv('td-eid');await apiWrite(eid?'edit_task':'add_task',d);resetTdForm()}
 
 async function saveSd(){if(!canEdit())return;const id=gv('si-id'),name=gv('si-name'),block=gv('si-block'),floor=gv('si-floor'),cat=gv('si-cat');if(!id||!name||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
-const d={MA_SD:id,TEN_BAN_VE:name,MA_CV_LIEN_KET:gv('si-tid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,KH_NGAY_NOP:gv('si-ps'),TT_NGAY_NOP:gv('si-as'),KH_NGAY_DUYET:gv('si-pa'),TT_NGAY_DUYET:gv('si-aa'),LAN_SUA:gv('si-rev')||'0',TRANG_THAI:gv('si-status')};
+const d={MA_SD:id,TEN_BAN_VE:name,MA_CV_LIEN_KET:gv('si-tid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,KH_NGAY_NOP:gv('si-ps'),TT_NGAY_NOP:gv('si-as'),KH_NGAY_DUYET:gv('si-pa'),TT_NGAY_DUYET:gv('si-aa'),LAN_SUA:gv('si-rev')||'0',TRANG_THAI:gv('si-status'),GHI_CHU_THIET_KE:gv('si-note')};
 const eid=gv('sd-eid');await apiWrite(eid?'edit_sd':'add_sd',d);resetSdForm()}
 
 async function saveRfi(){if(!canEdit())return;const id=gv('ri-id'),sub=gv('ri-sub'),block=gv('ri-block'),floor=gv('ri-floor'),cat=gv('ri-cat');if(!id||!sub||!block||!floor||!cat){toast('Điền đủ trường *','err');return}
-const d={MA_RFI:id,NOI_DUNG:sub,MA_CV_LIEN_KET:gv('ri-tid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,NGAY_PHAT_SINH:gv('ri-rd'),HAN_PHAN_HOI:gv('ri-rqd'),NGAY_DA_PHAN_HOI:gv('ri-rpd'),MUC_DO:gv('ri-imp'),TRANG_THAI:gv('ri-status')};
+const d={MA_RFI:id,NOI_DUNG:sub,MA_CV_LIEN_KET:gv('ri-tid'),MA_SD_LIEN_KET:gv('ri-sdid'),PHAN_KHU:block,TANG:floor,HANG_MUC:cat,NGAY_PHAT_SINH:gv('ri-rd'),HAN_PHAN_HOI:gv('ri-rqd'),NGAY_DA_PHAN_HOI:gv('ri-rpd'),MUC_DO:gv('ri-imp'),TRANG_THAI:gv('ri-status')};
 const eid=gv('rfi-eid');await apiWrite(eid?'edit_rfi':'add_rfi',d);resetRfiForm()}
 
 function editTd(id){if(!canEdit())return;const t=TASKS.find(x=>x.id===id);if(!t)return;setv('ti-id',t.id);setv('ti-name',t.name);setv('ti-block',t.block);setv('ti-floor',t.floor);setv('ti-cat',t.cat);setv('ti-ps',t.ps);setv('ti-pe',t.pe);setv('ti-as',t.as);setv('ti-ae',t.ae);setv('ti-pp',t.pp);setv('ti-ap',t.ap);setv('ti-w',t.w);setv('ti-cp',t.cp?'TRUE':'FALSE');setv('td-eid',t.id);document.getElementById('td-form-title').textContent='Sửa công việc';goPage('nl',document.getElementById('tab-nl'));goSub('s-td',document.querySelector('.sub-tab'))}
-function editSd(id){if(!canEdit())return;const s=SDS.find(x=>x.id===id);if(!s)return;setv('si-id',s.id);setv('si-name',s.name);setv('si-tid',s.tid);setv('si-block',s.block);setv('si-floor',s.floor);setv('si-cat',s.cat);setv('si-ps',s.ps);setv('si-as',s.as);setv('si-pa',s.pa);setv('si-aa',s.aa);setv('si-rev',s.rev);setv('si-status',s.status);setv('sd-eid',s.id);document.getElementById('sd-form-title').textContent='Sửa SD';goPage('nl',document.getElementById('tab-nl'));goSub('s-sd',document.querySelectorAll('.sub-tab')[1])}
-function editRfi(id){if(!canEdit())return;const r=RFIS.find(x=>x.id===id);if(!r)return;setv('ri-id',r.id);setv('ri-sub',r.subject);setv('ri-tid',r.tid);setv('ri-block',r.block);setv('ri-floor',r.floor);setv('ri-cat',r.cat);setv('ri-rd',r.rd);setv('ri-rqd',r.rqd);setv('ri-rpd',r.rpd);setv('ri-imp',r.imp);setv('ri-status',r.status);setv('rfi-eid',r.id);document.getElementById('rfi-form-title').textContent='Sửa RFI';goPage('nl',document.getElementById('tab-nl'));goSub('s-rfi',document.querySelectorAll('.sub-tab')[2])}
+function editSd(id){if(!canEdit())return;const s=SDS.find(x=>x.id===id);if(!s)return;setv('si-id',s.id);setv('si-name',s.name);setv('si-tid',s.tid);setv('si-block',s.block);setv('si-floor',s.floor);setv('si-cat',s.cat);setv('si-ps',s.ps);setv('si-as',s.as);setv('si-pa',s.pa);setv('si-aa',s.aa);setv('si-rev',s.rev);setv('si-status',s.status);setv('si-note',s.note);setv('sd-eid',s.id);document.getElementById('sd-form-title').textContent='Sửa SD';goPage('nl',document.getElementById('tab-nl'));goSub('s-sd',document.querySelectorAll('.sub-tab')[1])}
+function editRfi(id){if(!canEdit())return;const r=RFIS.find(x=>x.id===id);if(!r)return;setv('ri-id',r.id);setv('ri-sub',r.subject);setv('ri-tid',r.tid);setv('ri-sdid',r.sdid);setv('ri-block',r.block);setv('ri-floor',r.floor);setv('ri-cat',r.cat);setv('ri-rd',r.rd);setv('ri-rqd',r.rqd);setv('ri-rpd',r.rpd);setv('ri-imp',r.imp);setv('ri-status',r.status);setv('rfi-eid',r.id);document.getElementById('rfi-form-title').textContent='Sửa RFI';goPage('nl',document.getElementById('tab-nl'));goSub('s-rfi',document.querySelectorAll('.sub-tab')[2])}
 
 async function delTd(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_task',{id})}
 async function delSd(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_sd',{id})}
 async function delRfi(id){if(!isOwner()||!confirm('Xóa?'))return;await apiWrite('delete_rfi',{id})}
 
 function resetTdForm(){['ti-id','ti-name','ti-ps','ti-pe','ti-as','ti-ae','ti-pp','ti-ap','ti-w','td-eid'].forEach(id=>setv(id,''));setv('ti-block','');setv('ti-floor','');setv('ti-cat','');setv('ti-cp','FALSE');document.getElementById('td-form-title').textContent='Thêm công việc mới'}
-function resetSdForm(){['si-id','si-name','si-tid','si-ps','si-as','si-pa','si-aa','si-rev','sd-eid'].forEach(id=>setv(id,''));setv('si-block','');setv('si-floor','');setv('si-cat','');setv('si-status','CHUA_NOP');document.getElementById('sd-form-title').textContent='Thêm SD mới'}
-function resetRfiForm(){['ri-id','ri-sub','ri-tid','ri-rd','ri-rqd','ri-rpd','rfi-eid'].forEach(id=>setv(id,''));setv('ri-block','');setv('ri-floor','');setv('ri-cat','');setv('ri-imp','TRUNG_BINH');setv('ri-status','MO');document.getElementById('rfi-form-title').textContent='Thêm RFI mới'}
+function resetSdForm(){['si-id','si-name','si-tid','si-ps','si-as','si-pa','si-aa','si-rev','sd-eid','si-note'].forEach(id=>setv(id,''));setv('si-block','');setv('si-floor','');setv('si-cat','');setv('si-status','CHUA_NOP');document.getElementById('sd-form-title').textContent='Thêm SD mới'}
+function resetRfiForm(){['ri-id','ri-sub','ri-tid','ri-sdid','ri-rd','ri-rqd','ri-rpd','rfi-eid'].forEach(id=>setv(id,''));setv('ri-block','');setv('ri-floor','');setv('ri-cat','');setv('ri-imp','TRUNG_BINH');setv('ri-status','MO');document.getElementById('rfi-form-title').textContent='Thêm RFI mới'}
 
 // ==================== NAV ====================
 function goPage(p,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-bar .tab').forEach(x=>{if(!x.classList.contains('cfg-tab'))x.classList.remove('active')});document.getElementById('page-'+p).classList.add('active');if(b)b.classList.add('active');document.getElementById('filter-bar').style.display=p==='nl'?'none':'flex'}
 function goSub(s,b){document.querySelectorAll('.sub-pg').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));document.getElementById(s).classList.add('active');if(b)b.classList.add('active')}
-function applyF(){fBlock=document.getElementById('f-block').value;fFloor=document.getElementById('f-floor').value;fCat=document.getElementById('f-cat').value;render()}
+function applyF(){fBlock=document.getElementById('f-block').value;fFloor=document.getElementById('f-floor').value;fCat=document.getElementById('f-cat').value;fDept=document.getElementById('f-dept').value;render()}
 function render(){const{t,s,r}=getFlt();const k=calcKPI(t,s,r);renderKPI(k);renderAlert(k);renderCharts(t,s,r);renderTdTable(t);renderSdTable(s);renderRfiTable(r)}
 </script>
 </body>
